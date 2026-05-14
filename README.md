@@ -9,7 +9,7 @@ Sistema web para gerenciamento de clínica psicológica desenvolvido com **Next.
 ## 1. Clone o repositório
 
 ```bash
-git clone <URL_DO_REPOSITORIO>
+git clone git@github.com:lucasferreirafs/app-clinica-psicologica.git
 ```
 
 ## 2. Instale as dependências

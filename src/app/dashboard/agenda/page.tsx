@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import {
   Plus,
   ChevronLeft,
@@ -14,6 +14,9 @@ import {
   Trash2,
   Check,
   X,
+  Loader2,
+  Ban,
+  AlertCircle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -71,126 +74,152 @@ type Appointment = {
   time: string
   patient: string
   professional: string
+  pacienteId: string
+  profissionalId: string
   type: AppointmentType
   status: AppointmentStatus
+  observacoes?: string
 }
 
-const mockAppointments: Appointment[] = [
-  {
-    id: "1",
-    date: new Date(),
-    time: "09:00",
-    patient: "Ana Carolina Silva",
-    professional: "Dr. Carlos Silva",
-    type: "presencial",
-    status: "confirmado",
-  },
-  {
-    id: "2",
-    date: new Date(),
-    time: "10:30",
-    patient: "João Pedro Santos",
-    professional: "Dra. Maria Santos",
-    type: "online",
-    status: "agendado",
-  },
-  {
-    id: "3",
-    date: new Date(),
-    time: "14:00",
-    patient: "Maria Fernanda Lima",
-    professional: "Dr. Carlos Silva",
-    type: "presencial",
-    status: "confirmado",
-  },
-  {
-    id: "4",
-    date: addDays(new Date(), 1),
-    time: "09:00",
-    patient: "Lucas Oliveira",
-    professional: "Dra. Maria Santos",
-    type: "online",
-    status: "agendado",
-  },
-  {
-    id: "5",
-    date: addDays(new Date(), 1),
-    time: "11:00",
-    patient: "Beatriz Costa",
-    professional: "Dr. Carlos Silva",
-    type: "presencial",
-    status: "agendado",
-  },
-  {
-    id: "6",
-    date: addDays(new Date(), 2),
-    time: "10:00",
-    patient: "Rafael Mendes",
-    professional: "Dra. Maria Santos",
-    type: "presencial",
-    status: "agendado",
-  },
-  {
-    id: "7",
-    date: addDays(new Date(), -1),
-    time: "15:00",
-    patient: "Camila Rodrigues",
-    professional: "Dr. Carlos Silva",
-    type: "presencial",
-    status: "realizado",
-  },
-  {
-    id: "8",
-    date: addDays(new Date(), -1),
-    time: "16:30",
-    patient: "Felipe Almeida",
-    professional: "Dr. Carlos Silva",
-    type: "online",
-    status: "faltou",
-  },
-]
+type PatientOption = { id: string; nome_completo: string }
+type ProfessionalOption = { id: string; nome: string }
 
-const patients = [
-  "Ana Carolina Silva",
-  "João Pedro Santos",
-  "Maria Fernanda Lima",
-  "Lucas Oliveira",
-  "Beatriz Costa",
-  "Rafael Mendes",
-  "Camila Rodrigues",
-  "Felipe Almeida",
-]
+type FormData = {
+  date: string
+  time: string
+  pacienteId: string
+  profissionalId: string
+  type: AppointmentType
+  status: AppointmentStatus
+  observacoes: string
+}
 
-const professionals = ["Dr. Carlos Silva", "Dra. Maria Santos"]
+const EMPTY_FORM: FormData = {
+  date: format(new Date(), "yyyy-MM-dd"),
+  time: "",
+  pacienteId: "",
+  profissionalId: "",
+  type: "presencial",
+  status: "agendado",
+  observacoes: "",
+}
 
 const timeSlots = [
   "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
-  "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00"
+  "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00",
 ]
 
+const STATUS_MAP: Record<string, AppointmentStatus> = {
+  confirmar: "confirmado",
+  cancelar: "cancelado",
+  realizar: "realizado",
+  falta: "faltou",
+}
+
+function mapApiToAppointment(item: Record<string, string>): Appointment {
+  return {
+    id: item.id,
+    date: new Date(item.data_atendimento + "T00:00:00"),
+    time: (item.hora_atendimento ?? "").slice(0, 5),
+    patient: item.paciente,
+    professional: item.profissional,
+    pacienteId: item.paciente_id,
+    profissionalId: item.profissional_id,
+    type: item.tipo as AppointmentType,
+    status: item.status as AppointmentStatus,
+    observacoes: item.observacoes ?? undefined,
+  }
+}
+
 export default function AgendaPage() {
-  const [appointments, setAppointments] = useState<Appointment[]>(mockAppointments)
+  const [appointments, setAppointments] = useState<Appointment[]>([])
+  const [patientsList, setPatientsList] = useState<PatientOption[]>([])
+  const [professionalsList, setProfessionalsList] = useState<ProfessionalOption[]>([])
+  const [loadingAppointments, setLoadingAppointments] = useState(true)
+  const [submitting, setSubmitting] = useState(false)
+  const [statusLoading, setStatusLoading] = useState<string | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }))
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
-  const [formData, setFormData] = useState({
-    date: format(new Date(), "yyyy-MM-dd"),
-    time: "",
-    patient: "",
-    professional: "",
-    type: "presencial" as AppointmentType,
-    status: "agendado" as AppointmentStatus,
-  })
+  const [formData, setFormData] = useState<FormData>(EMPTY_FORM)
+
+  const fetchAppointments = useCallback(async () => {
+    setLoadingAppointments(true)
+    try {
+      const res = await fetch("/api/agenda")
+      const json = await res.json()
+      if (json.success) {
+        setAppointments(json.data.map(mapApiToAppointment))
+      } else {
+        toast.error(json.message ?? "Erro ao carregar agenda")
+      }
+    } catch {
+      toast.error("Erro de conexão ao carregar agenda")
+    } finally {
+      setLoadingAppointments(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchAppointments()
+
+    fetch("/api/pacientes")
+      .then((r) => r.json())
+      .then((json) => { if (json.success) setPatientsList(json.data) })
+      .catch(() => toast.error("Erro ao carregar lista de pacientes"))
+
+    fetch("/api/profissionais")
+      .then((r) => r.json())
+      .then((json) => { if (json.success) setProfessionalsList(json.data) })
+      .catch(() => toast.error("Erro ao carregar lista de profissionais"))
+  }, [fetchAppointments])
+
+  // ── Validação de data/hora ──────────────────────────────────────────────────
+  const todayStr = format(new Date(), "yyyy-MM-dd")
+  const isPastDate = !editingAppointment && formData.date < todayStr
+  const isSelectedToday = formData.date === todayStr
+
+  // Horários disponíveis: filtra slots passados + janela de 2h para hoje
+  const availableSlots = useMemo(() => {
+    if (editingAppointment) return timeSlots
+    if (formData.date !== format(new Date(), "yyyy-MM-dd")) return timeSlots
+    const minTime = Date.now() + 2 * 60 * 60 * 1000 // now + 2 h
+    return timeSlots.filter((slot) => {
+      const [h, m] = slot.split(":").map(Number)
+      const slotDate = new Date()
+      slotDate.setHours(h, m, 0, 0)
+      return slotDate.getTime() >= minTime
+    })
+  }, [formData.date, editingAppointment])
+
+  // Quando a data muda, invalida o horário se ele não estiver mais disponível
+  const handleDateChange = (newDate: string) => {
+    let newTime = formData.time
+    if (!editingAppointment && newDate === format(new Date(), "yyyy-MM-dd") && newTime) {
+      const [h, m] = newTime.split(":").map(Number)
+      const slotDate = new Date()
+      slotDate.setHours(h, m, 0, 0)
+      if (slotDate.getTime() < Date.now() + 2 * 60 * 60 * 1000) {
+        newTime = ""
+      }
+    }
+    setFormData({ ...formData, date: newDate, time: newTime })
+  }
+  // ────────────────────────────────────────────────────────────────────────────
 
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   }, [weekStart])
 
   const filteredAppointments = useMemo(() => {
-    return appointments.filter((apt) => isSameDay(apt.date, selectedDate))
+    return appointments
+      .filter((apt) => isSameDay(apt.date, selectedDate))
       .sort((a, b) => a.time.localeCompare(b.time))
   }, [appointments, selectedDate])
+
+  const getAppointmentsForDay = (date: Date) =>
+    appointments.filter((apt) => isSameDay(apt.date, date))
 
   const getStatusBadge = (status: AppointmentStatus) => {
     const styles: Record<AppointmentStatus, string> = {
@@ -214,56 +243,72 @@ export default function AgendaPage() {
     )
   }
 
-  const getInitials = (name: string) => {
-    return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-  }
+  const getInitials = (name: string) =>
+    name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (editingAppointment) {
+      const patientName = patientsList.find((p) => p.id === formData.pacienteId)?.nome_completo ?? editingAppointment.patient
+      const profName = professionalsList.find((p) => p.id === formData.profissionalId)?.nome ?? editingAppointment.professional
       setAppointments(
         appointments.map((apt) =>
           apt.id === editingAppointment.id
             ? {
                 ...apt,
-                date: new Date(formData.date),
                 time: formData.time,
-                patient: formData.patient,
-                professional: formData.professional,
+                pacienteId: formData.pacienteId,
+                patient: patientName,
+                profissionalId: formData.profissionalId,
+                professional: profName,
                 type: formData.type,
-                status: formData.status,
+                observacoes: formData.observacoes || undefined,
               }
             : apt
         )
       )
-      toast.success("Agendamento atualizado com sucesso!")
-    } else {
-      const newAppointment: Appointment = {
-        id: String(Date.now()),
-        date: new Date(formData.date),
-        time: formData.time,
-        patient: formData.patient,
-        professional: formData.professional,
-        type: formData.type,
-        status: formData.status,
-      }
-      setAppointments([...appointments, newAppointment])
-      toast.success("Agendamento criado com sucesso!")
+      toast.success("Agendamento atualizado!")
+      resetForm()
+      return
     }
 
-    resetForm()
+    if (!formData.pacienteId || !formData.profissionalId || !formData.time) {
+      toast.error("Preencha paciente, profissional e horário")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/agenda", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          dataAtendimento: formData.date,
+          horaAtendimento: formData.time,
+          pacienteId: formData.pacienteId,
+          profissionalId: formData.profissionalId,
+          tipo: formData.type,
+          observacoes: formData.observacoes || null,
+        }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        toast.success("Atendimento agendado com sucesso!")
+        resetForm()
+        await fetchAppointments()
+      } else {
+        toast.error(json.message ?? "Erro ao criar agendamento")
+      }
+    } catch {
+      toast.error("Erro de conexão ao criar agendamento")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const resetForm = () => {
-    setFormData({
-      date: format(selectedDate, "yyyy-MM-dd"),
-      time: "",
-      patient: "",
-      professional: "",
-      type: "presencial",
-      status: "agendado",
-    })
+    setFormData({ ...EMPTY_FORM, date: format(selectedDate, "yyyy-MM-dd") })
     setEditingAppointment(null)
     setIsDialogOpen(false)
   }
@@ -273,30 +318,47 @@ export default function AgendaPage() {
     setFormData({
       date: format(appointment.date, "yyyy-MM-dd"),
       time: appointment.time,
-      patient: appointment.patient,
-      professional: appointment.professional,
+      pacienteId: appointment.pacienteId,
+      profissionalId: appointment.profissionalId,
       type: appointment.type,
       status: appointment.status,
+      observacoes: appointment.observacoes ?? "",
     })
     setIsDialogOpen(true)
   }
 
   const handleDelete = (id: string) => {
     setAppointments(appointments.filter((apt) => apt.id !== id))
-    toast.success("Agendamento excluído com sucesso!")
+    toast.success("Agendamento excluído!")
   }
 
-  const handleStatusChange = (id: string, status: AppointmentStatus) => {
-    setAppointments(
-      appointments.map((apt) =>
-        apt.id === id ? { ...apt, status } : apt
-      )
-    )
-    toast.success("Status atualizado!")
-  }
-
-  const getAppointmentsForDay = (date: Date) => {
-    return appointments.filter((apt) => isSameDay(apt.date, date))
+  const handleStatusChange = async (id: string, acao: string) => {
+    setStatusLoading(id)
+    try {
+      const res = await fetch("/api/agenda/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agendaId: id, acao }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        const newStatus = STATUS_MAP[acao]
+        if (newStatus) {
+          setAppointments(
+            appointments.map((apt) =>
+              apt.id === id ? { ...apt, status: newStatus } : apt
+            )
+          )
+        }
+        toast.success("Status atualizado!")
+      } else {
+        toast.error(json.message ?? "Erro ao atualizar status")
+      }
+    } catch {
+      toast.error("Erro de conexão ao atualizar status")
+    } finally {
+      setStatusLoading(null)
+    }
   }
 
   return (
@@ -310,10 +372,12 @@ export default function AgendaPage() {
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => {
-              resetForm()
-              setFormData((prev) => ({ ...prev, date: format(selectedDate, "yyyy-MM-dd") }))
-            }}>
+            <Button
+              onClick={() => {
+                resetForm()
+                setFormData((prev) => ({ ...prev, date: format(selectedDate, "yyyy-MM-dd") }))
+              }}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Novo Agendamento
             </Button>
@@ -323,9 +387,7 @@ export default function AgendaPage() {
               <DialogTitle>
                 {editingAppointment ? "Editar Agendamento" : "Novo Agendamento"}
               </DialogTitle>
-              <DialogDescription>
-                Preencha os dados do atendimento
-              </DialogDescription>
+              <DialogDescription>Preencha os dados do atendimento</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
               <div className="space-y-4 py-4">
@@ -336,7 +398,7 @@ export default function AgendaPage() {
                       id="date"
                       type="date"
                       value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      onChange={(e) => handleDateChange(e.target.value)}
                       required
                     />
                   </div>
@@ -344,64 +406,85 @@ export default function AgendaPage() {
                     <Label htmlFor="time">Horário</Label>
                     <Select
                       value={formData.time}
-                      onValueChange={(value) => setFormData({ ...formData, time: value })}
+                      onValueChange={(v) => setFormData({ ...formData, time: v })}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
-                        {timeSlots.map((slot) => (
-                          <SelectItem key={slot} value={slot}>
-                            {slot}
+                        {availableSlots.length === 0 ? (
+                          <SelectItem value="_sem_horario" disabled>
+                            Sem horários disponíveis hoje
                           </SelectItem>
-                        ))}
+                        ) : (
+                          availableSlots.map((slot) => (
+                            <SelectItem key={slot} value={slot}>
+                              {slot}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="patient">Paciente</Label>
                   <Select
-                    value={formData.patient}
-                    onValueChange={(value) => setFormData({ ...formData, patient: value })}
+                    value={formData.pacienteId}
+                    onValueChange={(v) => setFormData({ ...formData, pacienteId: v })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o paciente" />
                     </SelectTrigger>
                     <SelectContent>
-                      {patients.map((patient) => (
-                        <SelectItem key={patient} value={patient}>
-                          {patient}
+                      {patientsList.length === 0 ? (
+                        <SelectItem value="_empty" disabled>
+                          Nenhum paciente cadastrado
                         </SelectItem>
-                      ))}
+                      ) : (
+                        patientsList.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.nome_completo}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="professional">Profissional</Label>
                   <Select
-                    value={formData.professional}
-                    onValueChange={(value) => setFormData({ ...formData, professional: value })}
+                    value={formData.profissionalId}
+                    onValueChange={(v) => setFormData({ ...formData, profissionalId: v })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione o profissional" />
                     </SelectTrigger>
                     <SelectContent>
-                      {professionals.map((prof) => (
-                        <SelectItem key={prof} value={prof}>
-                          {prof}
+                      {professionalsList.length === 0 ? (
+                        <SelectItem value="_empty" disabled>
+                          Nenhum profissional cadastrado
                         </SelectItem>
-                      ))}
+                      ) : (
+                        professionalsList.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.nome}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="type">Tipo</Label>
                     <Select
                       value={formData.type}
-                      onValueChange={(value: AppointmentType) =>
-                        setFormData({ ...formData, type: value })
+                      onValueChange={(v: AppointmentType) =>
+                        setFormData({ ...formData, type: v })
                       }
                     >
                       <SelectTrigger>
@@ -427,8 +510,8 @@ export default function AgendaPage() {
                     <Label htmlFor="status">Status</Label>
                     <Select
                       value={formData.status}
-                      onValueChange={(value: AppointmentStatus) =>
-                        setFormData({ ...formData, status: value })
+                      onValueChange={(v: AppointmentStatus) =>
+                        setFormData({ ...formData, status: v })
                       }
                     >
                       <SelectTrigger>
@@ -444,12 +527,46 @@ export default function AgendaPage() {
                     </Select>
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="observacoes">Observações</Label>
+                  <Input
+                    id="observacoes"
+                    value={formData.observacoes}
+                    onChange={(e) =>
+                      setFormData({ ...formData, observacoes: e.target.value })
+                    }
+                    placeholder="Observações opcionais"
+                  />
+                </div>
               </div>
+              {isPastDate && (
+                <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive mb-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  Não é possível agendar para uma data no passado.
+                </div>
+              )}
+
+              {isSelectedToday && availableSlots.length === 0 && !editingAppointment && (
+                <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200 mb-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
+                  Não há horários disponíveis para hoje (mínimo 2 h de antecedência).
+                </div>
+              )}
+
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button type="submit">
+                <Button
+                  type="submit"
+                  disabled={
+                    submitting ||
+                    isPastDate ||
+                    (!editingAppointment && isSelectedToday && availableSlots.length === 0)
+                  }
+                >
+                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {editingAppointment ? "Salvar" : "Agendar"}
                 </Button>
               </DialogFooter>
@@ -509,8 +626,15 @@ export default function AgendaPage() {
                   </p>
                   <p className="text-lg font-bold">{format(day, "d")}</p>
                   {dayAppointments.length > 0 && (
-                    <p className={`text-xs mt-1 ${isSelected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
-                      {dayAppointments.length} consulta{dayAppointments.length !== 1 ? "s" : ""}
+                    <p
+                      className={`text-xs mt-1 ${
+                        isSelected
+                          ? "text-primary-foreground/80"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {dayAppointments.length} consulta
+                      {dayAppointments.length !== 1 ? "s" : ""}
                     </p>
                   )}
                 </button>
@@ -525,7 +649,8 @@ export default function AgendaPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Atendimentos - {format(selectedDate, "d 'de' MMMM, yyyy", { locale: ptBR })}
+            Atendimentos —{" "}
+            {format(selectedDate, "d 'de' MMMM, yyyy", { locale: ptBR })}
           </CardTitle>
           <CardDescription>
             {filteredAppointments.length} atendimento(s) agendado(s)
@@ -545,7 +670,16 @@ export default function AgendaPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAppointments.length === 0 ? (
+                {loadingAppointments ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="h-24 text-center">
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Carregando atendimentos...
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredAppointments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
                       Nenhum atendimento agendado para este dia.
@@ -587,29 +721,53 @@ export default function AgendaPage() {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <MoreHorizontal className="h-4 w-4" />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              disabled={statusLoading === appointment.id}
+                            >
+                              {statusLoading === appointment.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MoreHorizontal className="h-4 w-4" />
+                              )}
                               <span className="sr-only">Abrir menu</span>
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem
-                              onClick={() => handleStatusChange(appointment.id, "confirmado")}
+                              onClick={() =>
+                                handleStatusChange(appointment.id, "confirmar")
+                              }
                             >
                               <Check className="mr-2 h-4 w-4" />
                               Confirmar
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleStatusChange(appointment.id, "realizado")}
+                              onClick={() =>
+                                handleStatusChange(appointment.id, "realizar")
+                              }
                             >
                               <User className="mr-2 h-4 w-4" />
                               Marcar como Realizado
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleStatusChange(appointment.id, "faltou")}
+                              onClick={() =>
+                                handleStatusChange(appointment.id, "falta")
+                              }
                             >
                               <X className="mr-2 h-4 w-4" />
                               Paciente Faltou
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleStatusChange(appointment.id, "cancelar")
+                              }
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Ban className="mr-2 h-4 w-4" />
+                              Cancelar
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleEdit(appointment)}>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
   Plus,
@@ -14,9 +14,11 @@ import {
   ChevronLeft,
   ChevronRight,
   FileText,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Card,
   CardContent,
@@ -48,116 +50,96 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { toast } from "sonner"
 
 type Patient = {
   id: string
-  name: string
-  phone: string
+  nome_completo: string
   email: string
-  cpf: string
-  birthDate: string
-  createdAt: string
+  telefone: string
+  idade: number
 }
 
-const mockPatients: Patient[] = [
-  {
-    id: "1",
-    name: "Ana Carolina Silva",
-    phone: "(11) 99999-1111",
-    email: "ana.silva@email.com",
-    cpf: "123.456.789-00",
-    birthDate: "1990-05-15",
-    createdAt: "2024-01-10",
-  },
-  {
-    id: "2",
-    name: "João Pedro Santos",
-    phone: "(11) 99999-2222",
-    email: "joao.santos@email.com",
-    cpf: "234.567.890-11",
-    birthDate: "1985-08-22",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "3",
-    name: "Maria Fernanda Lima",
-    phone: "(11) 99999-3333",
-    email: "maria.lima@email.com",
-    cpf: "345.678.901-22",
-    birthDate: "1992-03-10",
-    createdAt: "2024-02-01",
-  },
-  {
-    id: "4",
-    name: "Lucas Oliveira",
-    phone: "(11) 99999-4444",
-    email: "lucas.oliveira@email.com",
-    cpf: "456.789.012-33",
-    birthDate: "1988-11-28",
-    createdAt: "2024-02-10",
-  },
-  {
-    id: "5",
-    name: "Beatriz Costa",
-    phone: "(11) 99999-5555",
-    email: "beatriz.costa@email.com",
-    cpf: "567.890.123-44",
-    birthDate: "1995-07-03",
-    createdAt: "2024-02-20",
-  },
-  {
-    id: "6",
-    name: "Rafael Mendes",
-    phone: "(11) 99999-6666",
-    email: "rafael.mendes@email.com",
-    cpf: "678.901.234-55",
-    birthDate: "1982-12-18",
-    createdAt: "2024-03-01",
-  },
-  {
-    id: "7",
-    name: "Camila Rodrigues",
-    phone: "(11) 99999-7777",
-    email: "camila.rodrigues@email.com",
-    cpf: "789.012.345-66",
-    birthDate: "1993-04-25",
-    createdAt: "2024-03-05",
-  },
-  {
-    id: "8",
-    name: "Felipe Almeida",
-    phone: "(11) 99999-8888",
-    email: "felipe.almeida@email.com",
-    cpf: "890.123.456-77",
-    birthDate: "1991-09-14",
-    createdAt: "2024-03-10",
-  },
-]
+type FormData = {
+  nomeCompleto: string
+  dataNascimento: string
+  cpf: string
+  telefone: string
+  email: string
+  endereco: string
+  profissao: string
+  estadoCivil: string
+  contatoEmergenciaNome: string
+  contatoEmergenciaTelefone: string
+  contatoEmergenciaRelacao: string
+  motivoConsulta: string
+  tempoQueixa: string
+}
+
+const EMPTY_FORM: FormData = {
+  nomeCompleto: "",
+  dataNascimento: "",
+  cpf: "",
+  telefone: "",
+  email: "",
+  endereco: "",
+  profissao: "",
+  estadoCivil: "",
+  contatoEmergenciaNome: "",
+  contatoEmergenciaTelefone: "",
+  contatoEmergenciaRelacao: "",
+  motivoConsulta: "",
+  tempoQueixa: "",
+}
 
 const ITEMS_PER_PAGE = 5
 
 export default function PatientsPage() {
-  const [patients, setPatients] = useState<Patient[]>(mockPatients)
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null)
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    email: "",
-    cpf: "",
-    birthDate: "",
-  })
+  const [formData, setFormData] = useState<FormData>(EMPTY_FORM)
+
+  useEffect(() => {
+    fetchPatients()
+  }, [])
+
+  const fetchPatients = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const res = await fetch("/api/pacientes")
+      const json = await res.json()
+      if (json.success) {
+        setPatients(json.data)
+      } else {
+        setError(json.message ?? "Erro ao carregar pacientes")
+      }
+    } catch {
+      setError("Erro de conexão ao carregar pacientes")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const filteredPatients = patients.filter(
-    (patient) =>
-      patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      patient.cpf.includes(searchTerm)
+    (p) =>
+      p.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
   const totalPages = Math.ceil(filteredPatients.length / ITEMS_PER_PAGE)
@@ -166,39 +148,46 @@ export default function PatientsPage() {
     currentPage * ITEMS_PER_PAGE
   )
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (editingPatient) {
       setPatients(
         patients.map((p) =>
           p.id === editingPatient.id
-            ? { ...p, ...formData }
+            ? { ...p, nome_completo: formData.nomeCompleto, telefone: formData.telefone, email: formData.email }
             : p
         )
       )
       toast.success("Paciente atualizado com sucesso!")
-    } else {
-      const newPatient: Patient = {
-        id: String(Date.now()),
-        ...formData,
-        createdAt: new Date().toISOString().split("T")[0],
-      }
-      setPatients([newPatient, ...patients])
-      toast.success("Paciente cadastrado com sucesso!")
+      resetForm()
+      return
     }
 
-    resetForm()
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/pacientes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      })
+      const json = await res.json()
+      if (json.success) {
+        toast.success("Paciente cadastrado com sucesso!")
+        resetForm()
+        await fetchPatients()
+      } else {
+        toast.error(json.message ?? "Erro ao cadastrar paciente")
+      }
+    } catch {
+      toast.error("Erro de conexão ao cadastrar paciente")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const resetForm = () => {
-    setFormData({
-      name: "",
-      phone: "",
-      email: "",
-      cpf: "",
-      birthDate: "",
-    })
+    setFormData(EMPTY_FORM)
     setEditingPatient(null)
     setIsDialogOpen(false)
   }
@@ -206,11 +195,10 @@ export default function PatientsPage() {
   const handleEdit = (patient: Patient) => {
     setEditingPatient(patient)
     setFormData({
-      name: patient.name,
-      phone: patient.phone,
+      ...EMPTY_FORM,
+      nomeCompleto: patient.nome_completo,
+      telefone: patient.telefone,
       email: patient.email,
-      cpf: patient.cpf,
-      birthDate: patient.birthDate,
     })
     setIsDialogOpen(true)
   }
@@ -220,14 +208,13 @@ export default function PatientsPage() {
     toast.success("Paciente excluído com sucesso!")
   }
 
-  const getInitials = (name: string) => {
-    return name
+  const getInitials = (name: string) =>
+    name
       .split(" ")
       .map((n) => n[0])
       .join("")
       .toUpperCase()
       .slice(0, 2)
-  }
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, "")
@@ -243,17 +230,6 @@ export default function PatientsPage() {
       return numbers.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
     }
     return value
-  }
-
-  const calculateAge = (birthDate: string) => {
-    const today = new Date()
-    const birth = new Date(birthDate)
-    let age = today.getFullYear() - birth.getFullYear()
-    const m = today.getMonth() - birth.getMonth()
-    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-      age--
-    }
-    return age
   }
 
   return (
@@ -272,7 +248,7 @@ export default function PatientsPage() {
               Novo Paciente
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingPatient ? "Editar Paciente" : "Novo Paciente"}
@@ -284,78 +260,216 @@ export default function PatientsPage() {
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome Completo</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="Digite o nome completo"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-6 py-4">
+                {/* Dados Pessoais */}
+                <div className="space-y-4">
+                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Dados Pessoais
+                  </p>
                   <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF</Label>
+                    <Label htmlFor="nomeCompleto">Nome Completo</Label>
                     <Input
-                      id="cpf"
-                      value={formData.cpf}
+                      id="nomeCompleto"
+                      value={formData.nomeCompleto}
                       onChange={(e) =>
-                        setFormData({ ...formData, cpf: formatCPF(e.target.value) })
+                        setFormData({ ...formData, nomeCompleto: e.target.value })
                       }
-                      placeholder="000.000.000-00"
-                      maxLength={14}
+                      placeholder="Nome completo do paciente"
                       required
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="cpf">CPF</Label>
+                      <Input
+                        id="cpf"
+                        value={formData.cpf}
+                        onChange={(e) =>
+                          setFormData({ ...formData, cpf: formatCPF(e.target.value) })
+                        }
+                        placeholder="000.000.000-00"
+                        maxLength={14}
+                        required={!editingPatient}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="dataNascimento">Data de Nascimento</Label>
+                      <Input
+                        id="dataNascimento"
+                        type="date"
+                        value={formData.dataNascimento}
+                        onChange={(e) =>
+                          setFormData({ ...formData, dataNascimento: e.target.value })
+                        }
+                        required={!editingPatient}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="telefone">Telefone</Label>
+                      <Input
+                        id="telefone"
+                        value={formData.telefone}
+                        onChange={(e) =>
+                          setFormData({ ...formData, telefone: formatPhone(e.target.value) })
+                        }
+                        placeholder="(00) 00000-0000"
+                        maxLength={15}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) =>
+                          setFormData({ ...formData, email: e.target.value })
+                        }
+                        placeholder="email@exemplo.com"
+                        required
+                      />
+                    </div>
+                  </div>
                   <div className="space-y-2">
-                    <Label htmlFor="birthDate">Data de Nascimento</Label>
+                    <Label htmlFor="endereco">Endereço</Label>
                     <Input
-                      id="birthDate"
-                      type="date"
-                      value={formData.birthDate}
+                      id="endereco"
+                      value={formData.endereco}
                       onChange={(e) =>
-                        setFormData({ ...formData, birthDate: e.target.value })
+                        setFormData({ ...formData, endereco: e.target.value })
                       }
-                      required
+                      placeholder="Endereço completo"
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="profissao">Profissão</Label>
+                      <Input
+                        id="profissao"
+                        value={formData.profissao}
+                        onChange={(e) =>
+                          setFormData({ ...formData, profissao: e.target.value })
+                        }
+                        placeholder="Profissão atual"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="estadoCivil">Estado Civil</Label>
+                      <Select
+                        value={formData.estadoCivil}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, estadoCivil: value })
+                        }
+                      >
+                        <SelectTrigger id="estadoCivil">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="solteiro">Solteiro(a)</SelectItem>
+                          <SelectItem value="casado">Casado(a)</SelectItem>
+                          <SelectItem value="divorciado">Divorciado(a)</SelectItem>
+                          <SelectItem value="viuvo">Viúvo(a)</SelectItem>
+                          <SelectItem value="uniao-estavel">União Estável</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) =>
-                      setFormData({ ...formData, phone: formatPhone(e.target.value) })
-                    }
-                    placeholder="(00) 00000-0000"
-                    maxLength={15}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    placeholder="email@exemplo.com"
-                    required
-                  />
-                </div>
+
+                {/* Contato de Emergência */}
+                {!editingPatient && (
+                  <div className="space-y-4">
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      Contato de Emergência
+                    </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="contatoEmergenciaNome">Nome</Label>
+                        <Input
+                          id="contatoEmergenciaNome"
+                          value={formData.contatoEmergenciaNome}
+                          onChange={(e) =>
+                            setFormData({ ...formData, contatoEmergenciaNome: e.target.value })
+                          }
+                          placeholder="Nome do contato"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="contatoEmergenciaTelefone">Telefone</Label>
+                        <Input
+                          id="contatoEmergenciaTelefone"
+                          value={formData.contatoEmergenciaTelefone}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              contatoEmergenciaTelefone: formatPhone(e.target.value),
+                            })
+                          }
+                          placeholder="(00) 00000-0000"
+                          maxLength={15}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contatoEmergenciaRelacao">Relação</Label>
+                      <Input
+                        id="contatoEmergenciaRelacao"
+                        value={formData.contatoEmergenciaRelacao}
+                        onChange={(e) =>
+                          setFormData({ ...formData, contatoEmergenciaRelacao: e.target.value })
+                        }
+                        placeholder="Ex: Mãe, Cônjuge, Irmão"
+                        required
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Queixa Principal */}
+                {!editingPatient && (
+                  <div className="space-y-4">
+                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                      Queixa Principal
+                    </p>
+                    <div className="space-y-2">
+                      <Label htmlFor="motivoConsulta">Motivo da Consulta</Label>
+                      <Textarea
+                        id="motivoConsulta"
+                        value={formData.motivoConsulta}
+                        onChange={(e) =>
+                          setFormData({ ...formData, motivoConsulta: e.target.value })
+                        }
+                        placeholder="Descreva o motivo da busca por atendimento"
+                        rows={3}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="tempoQueixa">Há quanto tempo?</Label>
+                      <Input
+                        id="tempoQueixa"
+                        value={formData.tempoQueixa}
+                        onChange={(e) =>
+                          setFormData({ ...formData, tempoQueixa: e.target.value })
+                        }
+                        placeholder="Ex: 6 meses, 2 anos"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
+
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={submitting}>
+                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {editingPatient ? "Salvar Alterações" : "Cadastrar"}
                 </Button>
               </DialogFooter>
@@ -376,7 +490,7 @@ export default function PatientsPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nome, email ou CPF..."
+                placeholder="Buscar por nome ou email..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value)
@@ -387,6 +501,18 @@ export default function PatientsPage() {
             </div>
           </div>
 
+          {error && (
+            <div className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+              {error}{" "}
+              <button
+                onClick={fetchPatients}
+                className="underline underline-offset-2"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          )}
+
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -394,15 +520,23 @@ export default function PatientsPage() {
                   <TableHead>Paciente</TableHead>
                   <TableHead className="hidden md:table-cell">Telefone</TableHead>
                   <TableHead className="hidden lg:table-cell">Email</TableHead>
-                  <TableHead className="hidden sm:table-cell">CPF</TableHead>
                   <TableHead className="hidden md:table-cell">Idade</TableHead>
                   <TableHead className="w-17.5">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedPatients.length === 0 ? (
+                {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center">
+                    <TableCell colSpan={5} className="h-24 text-center">
+                      <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Carregando pacientes...
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : paginatedPatients.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center">
                       Nenhum paciente encontrado.
                     </TableCell>
                   </TableRow>
@@ -413,13 +547,13 @@ export default function PatientsPage() {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
                             <AvatarFallback className="bg-primary/10 text-primary">
-                              {getInitials(patient.name)}
+                              {getInitials(patient.nome_completo)}
                             </AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium">{patient.name}</p>
+                            <p className="font-medium">{patient.nome_completo}</p>
                             <p className="text-xs text-muted-foreground md:hidden">
-                              {patient.phone}
+                              {patient.telefone}
                             </p>
                           </div>
                         </div>
@@ -427,7 +561,7 @@ export default function PatientsPage() {
                       <TableCell className="hidden md:table-cell">
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Phone className="h-3 w-3" />
-                          {patient.phone}
+                          {patient.telefone}
                         </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
@@ -436,11 +570,8 @@ export default function PatientsPage() {
                           {patient.email}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell text-muted-foreground">
-                        {patient.cpf}
-                      </TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {calculateAge(patient.birthDate)} anos
+                        {patient.idade} anos
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>
@@ -485,7 +616,6 @@ export default function PatientsPage() {
             </Table>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-4">
               <p className="text-sm text-muted-foreground">

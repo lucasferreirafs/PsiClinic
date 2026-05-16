@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, Suspense } from "react"
+import { useState, useEffect, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   Save,
@@ -11,6 +11,7 @@ import {
   Target,
   FileText,
   AlertCircle,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,12 +35,25 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 
+function calcularIdade(dataNascimento: string): string {
+  if (!dataNascimento) return ""
+  const today = new Date()
+  const birth = new Date(dataNascimento)
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+  return String(age)
+}
+
 function AnamneseForm() {
   const searchParams = useSearchParams()
   const patientId = searchParams.get("paciente")
 
+  const [anamneseId, setAnamneseId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
+
   const [formData, setFormData] = useState({
-    // Dados pessoais
     name: "",
     birthDate: "",
     age: "",
@@ -49,57 +63,125 @@ function AnamneseForm() {
     address: "",
     profession: "",
     civilStatus: "",
-    // Contato emergência
     emergencyName: "",
     emergencyPhone: "",
     emergencyRelation: "",
-    // Queixa principal
     mainComplaint: "",
     problemDuration: "",
     previousTherapy: "",
     previousTherapyDetails: "",
-    // Histórico pessoal
     physicalDiseases: "",
     medications: "",
     psychiatricHistory: "",
-    // Histórico familiar
     familyMentalHealth: "",
     familyRelationship: "",
-    // Hábitos
     sleepQuality: "",
     eatingHabits: "",
     substanceUse: "",
     physicalActivity: "",
-    // Aspectos emocionais
     anxietyLevel: "",
     moodDescription: "",
     stressLevel: "",
     recurrentThoughts: "",
-    // Objetivo
     therapyGoal: "",
-    // Observações
     psychologistNotes: "",
   })
 
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-
-    // Auto-calculate age when birth date changes
-    if (field === "birthDate" && value) {
-      const today = new Date()
-      const birth = new Date(value)
-      let age = today.getFullYear() - birth.getFullYear()
-      const m = today.getMonth() - birth.getMonth()
-      if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-        age--
+  const fetchAnamnese = useCallback(async () => {
+    if (!patientId) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/pacientes/anamnese?pacienteId=${patientId}`)
+      const json = await res.json()
+      if (json.success && json.data) {
+        const d = json.data
+        setAnamneseId(d.id)
+        setFormData({
+          name: d.nome_completo ?? "",
+          birthDate: d.data_nascimento ? d.data_nascimento.split("T")[0] : "",
+          age: d.data_nascimento ? calcularIdade(d.data_nascimento.split("T")[0]) : "",
+          cpf: d.cpf ?? "",
+          phone: d.telefone ?? "",
+          email: d.email ?? "",
+          address: d.endereco ?? "",
+          profession: d.profissao ?? "",
+          civilStatus: d.estado_civil ?? "",
+          emergencyName: d.contato_emergencia_nome ?? "",
+          emergencyPhone: d.contato_emergencia_telefone ?? "",
+          emergencyRelation: d.contato_emergencia_relacao ?? "",
+          mainComplaint: d.motivo_consulta ?? "",
+          problemDuration: d.tempo_queixa ?? "",
+          previousTherapy: d.fez_terapia_antes === true ? "sim" : d.fez_terapia_antes === false ? "nao" : "",
+          previousTherapyDetails: d.tempo_terapia_anterior ?? "",
+          physicalDiseases: d.doencas_fisicas ?? "",
+          medications: d.uso_medicamentos ?? "",
+          psychiatricHistory: d.historico_psiquiatrico ?? "",
+          familyMentalHealth: d.doencas_mentais_familia ?? "",
+          familyRelationship: d.relacao_familiar_desc ?? "",
+          sleepQuality: d.habitos_sono ?? "",
+          eatingHabits: d.habitos_alimentacao ?? "",
+          substanceUse: d.uso_substancias ?? "",
+          physicalActivity: d.atividade_fisica ?? "",
+          anxietyLevel: d.ansiedade ?? "",
+          moodDescription: d.humor ?? "",
+          stressLevel: d.estresse ?? "",
+          recurrentThoughts: d.pensamentos_recorrentes ?? "",
+          therapyGoal: d.objetivo_terapia ?? "",
+          psychologistNotes: d.observacoes_psicologo ?? "",
+        })
       }
-      setFormData((prev) => ({ ...prev, age: String(age) }))
+    } catch {
+      toast.error("Erro ao carregar dados da anamnese")
+    } finally {
+      setLoading(false)
     }
+  }, [patientId])
+
+  useEffect(() => {
+    fetchAnamnese()
+  }, [fetchAnamnese])
+
+  const handleChange = (field: string, value: string) => {
+    setFormData((prev) => {
+      const next = { ...prev, [field]: value }
+      if (field === "birthDate" && value) {
+        next.age = calcularIdade(value)
+      }
+      return next
+    })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    toast.success("Ficha de anamnese salva com sucesso!")
+  const handleSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault()
+
+    if (!anamneseId) {
+      toast.error("Selecione um paciente para salvar a anamnese")
+      return
+    }
+
+    setSaving(true)
+    try {
+      const res = await fetch("/api/pacientes/anamnese", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          anamneseId,
+          observacoesPsicologo: formData.psychologistNotes || null,
+          objetivoTerapia: formData.therapyGoal || null,
+          ansiedade: formData.anxietyLevel || null,
+        }),
+      })
+      const json = await res.json()
+      if (json.success) {
+        toast.success("Ficha de anamnese salva com sucesso!")
+      } else {
+        toast.error(json.message ?? "Erro ao salvar anamnese")
+      }
+    } catch {
+      toast.error("Erro de conexão ao salvar anamnese")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -113,11 +195,28 @@ function AnamneseForm() {
               : "Preencha as informações completas do paciente"}
           </p>
         </div>
-        <Button onClick={handleSubmit}>
-          <Save className="mr-2 h-4 w-4" />
-          Salvar Ficha
+        <Button onClick={() => handleSubmit()} disabled={saving || loading || !anamneseId}>
+          {saving ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
+          {saving ? "Salvando..." : "Salvar Ficha"}
         </Button>
       </div>
+
+      {loading && (
+        <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Carregando dados do paciente...
+        </div>
+      )}
+
+      {patientId && !loading && !anamneseId && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          Anamnese não encontrada para este paciente. Cadastre o paciente primeiro.
+        </div>
+      )}
 
       <form onSubmit={handleSubmit}>
         <Tabs defaultValue="dados-pessoais" className="space-y-6">
@@ -566,11 +665,9 @@ function AnamneseForm() {
                         <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="muito-baixo">Muito Baixo</SelectItem>
-                        <SelectItem value="baixo">Baixo</SelectItem>
-                        <SelectItem value="moderado">Moderado</SelectItem>
-                        <SelectItem value="alto">Alto</SelectItem>
-                        <SelectItem value="muito-alto">Muito Alto</SelectItem>
+                        <SelectItem value="leve">Leve</SelectItem>
+                        <SelectItem value="moderada">Moderada</SelectItem>
+                        <SelectItem value="intensa">Intensa</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

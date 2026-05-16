@@ -14,6 +14,7 @@ import {
   Settings,
   LogOut,
   Brain,
+  Stethoscope,
 } from "lucide-react"
 import {
   Sidebar,
@@ -56,6 +57,11 @@ const menuItems = [
     title: "Agenda",
     url: "/dashboard/agenda",
     icon: Calendar,
+  },
+  {
+    title: "Profissionais",
+    url: "/dashboard/profissionais",
+    icon: Stethoscope,
   },
   {
     title: "Financeiro",

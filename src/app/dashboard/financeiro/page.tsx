@@ -374,14 +374,40 @@ export default function FinanceiroPage() {
     }
   }
 
-  const handleDeleteRevenue = (id: string) => {
-    setRevenues(revenues.filter((r) => r.id !== id))
-    toast.success("Receita excluída!")
+  const handleDeleteRevenue = async (id: string) => {
+    try {
+      const res = await fetch(`/api/financeiro/receita?id=${id}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setRevenues(revenues.filter((r) => r.id !== id))
+        toast.success("Receita excluída com sucesso!")
+        await loadData()
+      } else {
+        toast.error(data.message || "Erro ao excluir receita")
+      }
+    } catch {
+      toast.error("Erro de conexão ao excluir receita")
+    }
   }
 
-  const handleDeleteExpense = (id: string) => {
-    setExpenses(expenses.filter((e) => e.id !== id))
-    toast.success("Despesa excluída!")
+  const handleDeleteExpense = async (id: string) => {
+    try {
+      const res = await fetch(`/api/financeiro/despesa?id=${id}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        setExpenses(expenses.filter((e) => e.id !== id))
+        toast.success("Despesa excluída com sucesso!")
+        await loadData()
+      } else {
+        toast.error(data.message || "Erro ao excluir despesa")
+      }
+    } catch {
+      toast.error("Erro de conexão ao excluir despesa")
+    }
   }
 
   const getStatusBadge = (status: Revenue["status"]) => {

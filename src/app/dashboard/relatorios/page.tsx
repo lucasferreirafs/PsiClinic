@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback } from "react"
+import { useState, useMemo, useEffect, useCallback, useRef } from "react"
 import {
   FileBarChart,
   Download,
@@ -10,6 +10,7 @@ import {
   Package,
   TrendingUp,
   TrendingDown,
+  Brain,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -91,6 +92,13 @@ function fmtMonth(ano: number, mes: number) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
+const REPORT_TYPE_LABELS: Record<string, string> = {
+  financeiro: "Relatório Financeiro",
+  pacientes: "Relatório de Pacientes",
+  agenda: "Relatório de Agenda",
+  estoque: "Relatório de Estoque",
+}
+
 export default function RelatoriosPage() {
   const today = new Date()
   const thisYear = today.getFullYear()
@@ -102,6 +110,8 @@ export default function RelatoriosPage() {
   const [appliedDates, setAppliedDates] = useState({ start: "", end: "" })
   const [reportType, setReportType] = useState("financeiro")
   const [loading, setLoading] = useState(true)
+  const [isPrinting, setIsPrinting] = useState(false)
+  const printRef = useRef<HTMLDivElement>(null)
 
   // Financial
   const [financialItems, setFinancialItems] = useState<FinancialItem[]>([])
@@ -242,8 +252,24 @@ export default function RelatoriosPage() {
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
   const handleExport = () => {
-    window.print()
+    setIsPrinting(true)
+    // Give React time to re-render with print-safe chart heights before printing
+    setTimeout(() => {
+      window.print()
+      // After print dialog closes, restore normal view
+      setTimeout(() => setIsPrinting(false), 500)
+    }, 300)
   }
+
+  const printDate = today.toLocaleDateString("pt-BR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  })
+
+  const printPeriod = appliedDates.start && appliedDates.end
+    ? `${new Date(appliedDates.start + "T12:00:00").toLocaleDateString("pt-BR")} a ${new Date(appliedDates.end + "T12:00:00").toLocaleDateString("pt-BR")}`
+    : `01/01/${thisYear} a 31/12/${thisYear}`
 
   const handleApplyFilters = () => {
     setAppliedDates(dateRange)
@@ -261,15 +287,74 @@ export default function RelatoriosPage() {
   // ─── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6" ref={printRef}>
+
+      {/* ── Print-only professional header ── */}
+      <div className="hidden print:block">
+        {/* Top brand bar - print-color-adjust forces the background to print */}
+        <div style={{
+          background: "#1e3a5f",
+          padding: "20px 32px",
+          marginBottom: 0,
+          WebkitPrintColorAdjust: "exact",
+          printColorAdjust: "exact",
+        } as React.CSSProperties}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              {/* Brain logo circle */}
+              <div style={{
+                width: 48, height: 48, borderRadius: "50%",
+                background: "#3b82f6",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                flexShrink: 0,
+                WebkitPrintColorAdjust: "exact",
+                printColorAdjust: "exact",
+              } as React.CSSProperties}>
+                {/* Brain icon — Lucide Brain SVG paths */}
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
+                  <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
+                </svg>
+              </div>
+              <div>
+                <div style={{ color: "#60a5fa", fontSize: 24, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1 }}>PsiClinic</div>
+                <div style={{ color: "#93c5fd", fontSize: 11, marginTop: 3 }}>Sistema de Gestão Clínica de Psicologia</div>
+              </div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div style={{ color: "white", fontSize: 18, fontWeight: 600 }}>{REPORT_TYPE_LABELS[reportType]}</div>
+              <div style={{ color: "#93c5fd", fontSize: 11, marginTop: 3 }}>Gerado em {printDate}</div>
+            </div>
+          </div>
+        </div>
+        {/* Info bar */}
+        <div style={{
+          background: "#eff6ff",
+          borderBottom: "3px solid #1e3a5f",
+          padding: "10px 32px",
+          display: "flex",
+          gap: 32,
+          fontSize: 12,
+          color: "#374151",
+          marginBottom: 20,
+          WebkitPrintColorAdjust: "exact",
+          printColorAdjust: "exact",
+        } as React.CSSProperties}>
+          <div><span style={{ fontWeight: 700, color: "#1e3a5f" }}>Período:</span> {printPeriod}</div>
+          <div><span style={{ fontWeight: 700, color: "#1e3a5f" }}>Módulo:</span> {REPORT_TYPE_LABELS[reportType]}</div>
+          <div><span style={{ fontWeight: 700, color: "#1e3a5f" }}>Sistema:</span> PsiClinic v1.0</div>
+        </div>
+      </div>
+
+      {/* ── Screen-only page title & export button ── */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Relatórios</h1>
           <p className="text-muted-foreground">Visualize e exporte relatórios da clínica</p>
         </div>
-        <Button onClick={handleExport} className="print:hidden">
+        <Button onClick={handleExport} disabled={isPrinting}>
           <Download className="mr-2 h-4 w-4" />
-          Exportar PDF
+          {isPrinting ? "Preparando..." : "Exportar PDF"}
         </Button>
       </div>
 
@@ -399,24 +484,32 @@ export default function RelatoriosPage() {
               <CardDescription>Comparativo mensal do período selecionado</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-87.5">
-                {financialChartData.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-                    {loading ? "Carregando..." : "Nenhum dado financeiro no período."}
-                  </div>
-                ) : (
+              {financialChartData.length === 0 ? (
+                <div className="flex h-40 items-center justify-center text-muted-foreground text-sm">
+                  {loading ? "Carregando..." : "Nenhum dado financeiro no período."}
+                </div>
+              ) : isPrinting ? (
+                <BarChart data={financialChartData} width={740} height={260}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="month" tick={{ fill: "#374151", fontSize: 11 }} />
+                  <YAxis tick={{ fill: "#374151", fontSize: 11 }} />
+                  <Bar dataKey="receitas" fill="#2563eb" radius={[4, 4, 0, 0]} name="Receitas" />
+                  <Bar dataKey="despesas" fill="#dc2626" radius={[4, 4, 0, 0]} name="Despesas" />
+                </BarChart>
+              ) : (
+                <div className="h-87.5">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={financialChartData}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                       <XAxis dataKey="month" tick={{ fill: "currentColor" }} />
                       <YAxis tick={{ fill: "currentColor" }} />
                       <Tooltip {...tooltipStyle} formatter={(value: number) => formatCurrency(value)} />
-                      <Bar dataKey="receitas" fill="oklch(0.55 0.15 220)" radius={[4, 4, 0, 0]} name="Receitas" />
-                      <Bar dataKey="despesas" fill="oklch(0.55 0.2 25)" radius={[4, 4, 0, 0]} name="Despesas" />
+                      <Bar dataKey="receitas" fill="#2563eb" radius={[4, 4, 0, 0]} name="Receitas" />
+                      <Bar dataKey="despesas" fill="#dc2626" radius={[4, 4, 0, 0]} name="Despesas" />
                     </BarChart>
                   </ResponsiveContainer>
-                )}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -478,29 +571,30 @@ export default function RelatoriosPage() {
               <CardDescription>Cadastros realizados ao longo do tempo</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-87.5">
-                {patientChartData.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-                    {loading ? "Carregando..." : "Nenhum dado de pacientes encontrado."}
-                  </div>
-                ) : (
+              {patientChartData.length === 0 ? (
+                <div className="flex h-40 items-center justify-center text-muted-foreground text-sm">
+                  {loading ? "Carregando..." : "Nenhum dado de pacientes encontrado."}
+                </div>
+              ) : isPrinting ? (
+                <LineChart data={patientChartData} width={740} height={260}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="month" tick={{ fill: "#374151", fontSize: 11 }} />
+                  <YAxis tick={{ fill: "#374151", fontSize: 11 }} />
+                  <Line type="monotone" dataKey="novos" stroke="#2563eb" strokeWidth={2} name="Novos" />
+                </LineChart>
+              ) : (
+                <div className="h-87.5">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={patientChartData}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                       <XAxis dataKey="month" tick={{ fill: "currentColor" }} />
                       <YAxis tick={{ fill: "currentColor" }} />
                       <Tooltip {...tooltipStyle} />
-                      <Line
-                        type="monotone"
-                        dataKey="novos"
-                        stroke="oklch(0.55 0.15 220)"
-                        strokeWidth={2}
-                        name="Novos"
-                      />
+                      <Line type="monotone" dataKey="novos" stroke="#2563eb" strokeWidth={2} name="Novos" />
                     </LineChart>
                   </ResponsiveContainer>
-                )}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -579,25 +673,34 @@ export default function RelatoriosPage() {
               <CardDescription>Realizadas, canceladas e faltas</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-87.5">
-                {agendaChartData.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-                    {loading ? "Carregando..." : "Nenhum atendimento encontrado no período."}
-                  </div>
-                ) : (
+              {agendaChartData.length === 0 ? (
+                <div className="flex h-40 items-center justify-center text-muted-foreground text-sm">
+                  {loading ? "Carregando..." : "Nenhum atendimento encontrado no período."}
+                </div>
+              ) : isPrinting ? (
+                <BarChart data={agendaChartData} width={740} height={260}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="month" tick={{ fill: "#374151", fontSize: 11 }} />
+                  <YAxis tick={{ fill: "#374151", fontSize: 11 }} />
+                  <Bar dataKey="realizadas" fill="#2563eb" radius={[4, 4, 0, 0]} name="Realizadas" />
+                  <Bar dataKey="canceladas" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Canceladas" />
+                  <Bar dataKey="faltas" fill="#dc2626" radius={[4, 4, 0, 0]} name="Faltas" />
+                </BarChart>
+              ) : (
+                <div className="h-87.5">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={agendaChartData}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                       <XAxis dataKey="month" tick={{ fill: "currentColor" }} />
                       <YAxis tick={{ fill: "currentColor" }} />
                       <Tooltip {...tooltipStyle} />
-                      <Bar dataKey="realizadas" fill="oklch(0.55 0.15 220)" radius={[4, 4, 0, 0]} name="Realizadas" />
-                      <Bar dataKey="canceladas" fill="oklch(0.75 0.15 85)" radius={[4, 4, 0, 0]} name="Canceladas" />
-                      <Bar dataKey="faltas" fill="oklch(0.55 0.2 25)" radius={[4, 4, 0, 0]} name="Faltas" />
+                      <Bar dataKey="realizadas" fill="#2563eb" radius={[4, 4, 0, 0]} name="Realizadas" />
+                      <Bar dataKey="canceladas" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Canceladas" />
+                      <Bar dataKey="faltas" fill="#dc2626" radius={[4, 4, 0, 0]} name="Faltas" />
                     </BarChart>
                   </ResponsiveContainer>
-                )}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -652,12 +755,27 @@ export default function RelatoriosPage() {
               <CardDescription>Quantidade de itens por categoria</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-87.5">
-                {estoqueCategorias.length === 0 ? (
-                  <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
-                    {loading ? "Carregando..." : "Nenhum item de estoque encontrado."}
-                  </div>
-                ) : (
+              {estoqueCategorias.length === 0 ? (
+                <div className="flex h-40 items-center justify-center text-muted-foreground text-sm">
+                  {loading ? "Carregando..." : "Nenhum item de estoque encontrado."}
+                </div>
+              ) : isPrinting ? (
+                <PieChart width={740} height={260}>
+                  <Pie
+                    data={estoqueCategorias}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={100}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {estoqueCategorias.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={["#2563eb","#16a34a","#7c3aed","#d97706","#dc2626","#0891b2"][index % 6]} />
+                    ))}
+                  </Pie>
+                </PieChart>
+              ) : (
+                <div className="h-87.5">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -673,15 +791,15 @@ export default function RelatoriosPage() {
                         {estoqueCategorias.map((entry, index) => (
                           <Cell
                             key={`cell-${index}`}
-                            fill={COLORS[index % COLORS.length]}
+                            fill={["#2563eb","#16a34a","#7c3aed","#d97706","#dc2626","#0891b2"][index % 6]}
                           />
                         ))}
                       </Pie>
                       <Tooltip />
                     </PieChart>
                   </ResponsiveContainer>
-                )}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

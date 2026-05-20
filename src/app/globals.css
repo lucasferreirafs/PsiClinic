@@ -139,38 +139,70 @@
 
 /* ── Print Styles for PDF Export ── */
 @media print {
-  /* Hide sidebar, top navigation header, tabs bar, filters, and export button */
+  /* Force background colors to print (browsers suppress them by default) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* ① Hide all navigation chrome */
   aside,
   header,
-  .no-print,
-  .print\:hidden,
-  button,
-  [role="tablist"] {
+  [role="tablist"],
+  .print\:hidden {
     display: none !important;
   }
 
-  /* Reset main container layout for full width printing */
+  /* ② Reset page layout so full width is used */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 12pt !important;
+  }
+
+  /* ③ Main content area — remove sidebar offset and padding */
   main {
     padding: 0 !important;
     margin: 0 !important;
     overflow: visible !important;
     width: 100% !important;
     max-width: 100% !important;
+    display: block !important;
   }
 
-  /* Ensure cards and background look crisp in black/white or color print */
-  body {
-    background: #ffffff !important;
-    color: #000000 !important;
+  /* ④ Sidebar inset — remove any flex/grid offset */
+  [data-sidebar-inset],
+  [class*="SidebarInset"] {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
   }
 
+  /* ⑤ Cards look clean on paper */
   .border {
-    border-color: #e2e8f0 !important;
+    border-color: #d1d5db !important;
   }
 
-  /* Avoid charts clipping inside hidden containers */
+  /* ⑥ Recharts: force SVG containers to have explicit pixel height so they render */
   .recharts-responsive-container {
-    width: 100% !important;
-    height: 400px !important;
+    min-height: 300px !important;
+  }
+
+  svg.recharts-surface {
+    overflow: visible !important;
+  }
+
+  /* ⑦ Avoid breaking cards across pages */
+  [class*="Card"] {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* ⑧ Page footer with URL + page number */
+  @page {
+    margin: 0.5cm 1cm 1.2cm 1cm;
+    size: A4 portrait;
   }
 }
+

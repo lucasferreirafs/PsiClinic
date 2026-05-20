@@ -1,6 +1,7 @@
 "use client"
 
-import { usePathname } from "next/navigation"
+import { useState, useEffect } from "react"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import {
   LayoutDashboard,
@@ -95,6 +96,24 @@ const adminItems = [
 
 export function AppSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const [user, setUser] = useState({ nome: "Administrador", email: "admin@psiclinic.com" })
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((json) => {
+        if (json.success) {
+          setUser({ nome: json.user.nome, email: json.user.email })
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" })
+    router.push("/")
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -169,15 +188,14 @@ export function AppSidebar() {
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
                   <Avatar className="h-8 w-8 rounded-lg">
-                    <AvatarImage src="/avatar.jpg" alt="Admin" />
                     <AvatarFallback className="rounded-lg bg-primary text-primary-foreground">
-                      AD
+                      {user.nome.slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">Administrador</span>
+                    <span className="truncate font-semibold">{user.nome}</span>
                     <span className="truncate text-xs text-sidebar-foreground/60">
-                      admin@psiclinic.com
+                      {user.email}
                     </span>
                   </div>
                 </SidebarMenuButton>
@@ -195,11 +213,12 @@ export function AppSidebar() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className="text-destructive">
-                  <Link href="/">
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sair
-                  </Link>
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

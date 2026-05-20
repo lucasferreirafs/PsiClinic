@@ -88,9 +88,12 @@
 - [x] `GET /api/relatorios/agenda` — distribuição e evolução de agenda
 - [x] `GET /api/relatorios/estoque` — resumo e categorias de estoque
 - [x] `GET /api/usuarios` — listagem de usuários administrativos
-- [x] `POST /api/usuarios` — cadastro de usuário
-- [x] `PUT /api/usuarios` — atualização de usuário
+- [x] `POST /api/usuarios` — cadastro de usuário com senha hasheada (bcrypt)
+- [x] `PUT /api/usuarios` — atualização de usuário (senha opcional)
 - [x] `DELETE /api/usuarios` — inativação lógica de usuário
+- [x] `POST /api/auth/login` — autenticação com JWT via cookie httpOnly
+- [x] `POST /api/auth/logout` — remoção do cookie de sessão
+- [x] `GET /api/auth/me` — retorno do usuário autenticado via cookie
 
 ---
 
@@ -103,21 +106,30 @@
 - [x] Módulo Relatórios integrado com dados reais do banco
 - [x] Módulo Usuários Administrativos integrado com dados reais do banco
 - [x] Dados mockados removidos de todos os módulos (incluindo `mockUsers`)
+- [x] Login real integrado com `POST /api/auth/login` (removido mock setTimeout)
+- [x] `AppSidebar` exibe nome/email do usuário autenticado via `GET /api/auth/me`
+- [x] Logout chama `POST /api/auth/logout` e redireciona para tela de login
+- [x] Middleware protege todas as rotas `/dashboard/*`
 - [x] `pool` não importado em nenhum componente client-side
 - [x] `DATABASE_URL` não exposta em respostas do frontend
+- [x] `JWT_SECRET` nunca exposto no frontend
 
 ---
 
 ## Qualidade e Validação
 
 - [ ] `npm run lint` executado sem erros críticos
-- [x] `npm run build` executado com sucesso (zero erros TypeScript)
+- [x] `npm run build` executado com sucesso (39 rotas, middleware ativo, zero erros TypeScript)
 - [x] Sem erro de TypeScript (`npx tsc --noEmit` limpo)
 - [x] Sem `DATABASE_URL` ou credenciais expostas no código
+- [x] `JWT_SECRET` configurado apenas via variável de ambiente
+- [x] Senhas armazenadas como hash bcrypt (12 rounds) — nunca em texto puro
 - [x] `.env.local` fora do rastreamento Git
+- [x] `.env.example` criado com placeholders (sem valores reais)
 - [x] Queries parametrizadas em 100% das rotas
 - [x] Todas as rotas de escrita em tabelas de domínio usam stored procedures
 - [x] Patches SQL incrementais criados em `docs/sql/`
+- [x] `middleware.ts` usa `jose` (Edge Runtime) — sem dependência de Node.js crypto no middleware
 
 ---
 
@@ -144,6 +156,9 @@
 - [x] `docs/09-checklist-entrega.md` criado (este arquivo)
 - [x] `docs/10-der-plantuml.md` criado
 - [x] `docs/DOCUMENTACAO_FINAL.md` criado
+- [x] `docs/sql/patch_auth_usuarios.sql` criado
+- [x] `scripts/create-admin-user.js` criado
+- [x] `.env.example` criado
 - [x] `README.md` atualizado
 
 ---

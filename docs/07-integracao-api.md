@@ -544,21 +544,22 @@ Substituiu o UPDATE direto (20 parâmetros) que havia na implementação anterio
 
 ### `POST /api/usuarios`
 
-**Objetivo:** Criar um novo usuário administrativo.
+**Objetivo:** Criar um novo usuário administrativo com senha hasheada.
 
 **Body (JSON):**
 ```json
 {
   "nome": "string",
   "email": "string",
-  "perfil": "dono | admin"
+  "perfil": "dono | admin",
+  "senha": "string (mín. 6 chars)"
 }
 ```
 
-**Operação:** `INSERT INTO usuarios (nome, email, perfil) VALUES ($1, $2, $3)`
+**Operação:** Hash bcrypt (12 rounds) da senha + `INSERT INTO usuarios (nome, email, perfil, senha_hash) VALUES ($1, $2, $3, $4)`
 
 **Erros possíveis:**
-- `400` — Campos obrigatórios ausentes ou perfil inválido
+- `400` — Campos obrigatórios ausentes, perfil inválido ou senha com menos de 6 caracteres
 - `409` — E-mail duplicado
 - `500` — Erro interno
 
@@ -566,7 +567,7 @@ Substituiu o UPDATE direto (20 parâmetros) que havia na implementação anterio
 
 ### `PUT /api/usuarios`
 
-**Objetivo:** Atualizar dados de um usuário administrativo.
+**Objetivo:** Atualizar dados de um usuário administrativo. A senha é opcional — se fornecida, é re-hasheada.
 
 **Body (JSON):**
 ```json
@@ -574,11 +575,14 @@ Substituiu o UPDATE direto (20 parâmetros) que havia na implementação anterio
   "id": "uuid",
   "nome": "string",
   "email": "string",
-  "perfil": "dono | admin"
+  "perfil": "dono | admin",
+  "senha": "string (opcional, mín. 6 chars)"
 }
 ```
 
-**Operação:** `UPDATE usuarios SET nome = $1, email = $2, perfil = $3 WHERE id = $4 AND ativo = TRUE`
+**Operação:**
+- Se `senha` fornecida: hash bcrypt + `UPDATE usuarios SET nome, email, perfil, senha_hash WHERE id AND ativo`
+- Caso contrário: `UPDATE usuarios SET nome, email, perfil WHERE id AND ativo`
 
 ---
 
@@ -596,7 +600,79 @@ Substituiu o UPDATE direto (20 parâmetros) que havia na implementação anterio
 
 ---
 
-**Nota:** A tela `/dashboard/usuarios` passou a utilizar esta API com dados reais do banco, substituindo o `mockUsers` que havia na implementação anterior. Senhas não são armazenadas — a autenticação real requer implementação futura com hashing adequado.
+---
+
+## Módulo: Autenticação
+
+### `POST /api/auth/login`
+
+**Objetivo:** Autenticar um usuário e iniciar sessão via cookie JWT httpOnly.
+
+**Body (JSON):**
+```json
+{
+  "email": "string",
+  "senha": "string"
+}
+```
+
+**Fluxo:**
+1. Busca o usuário por e-mail (`WHERE ativo = TRUE`).
+2. Compara a senha com `senha_hash` via `bcrypt.compare`.
+3. Assina um JWT HS256 com payload `{ sub, email, nome, perfil }` e expiração de 8h.
+4. Seta o cookie `psiclinic_token` (httpOnly, sameSite: lax, path: "/", maxAge: 28800).
+5. Atualiza `ultimo_login` na tabela `usuarios`.
+
+**Resposta de sucesso:**
+```json
+{ "success": true, "user": { "id": "uuid", "nome": "...", "email": "...", "perfil": "..." } }
+```
+
+**Erros:**
+- `401` — `"E-mail ou senha inválidos."` (mensagem genérica para qualquer falha de credencial)
+- `500` — Erro interno
+
+---
+
+### `POST /api/auth/logout`
+
+**Objetivo:** Encerrar a sessão removendo o cookie JWT.
+
+**Operação:** `response.cookies.delete("psiclinic_token")`
+
+**Resposta:** `{ "success": true, "message": "Logout realizado com sucesso" }`
+
+---
+
+### `GET /api/auth/me`
+
+**Objetivo:** Retornar os dados do usuário autenticado a partir do cookie JWT.
+
+**Fluxo:**
+1. Lê o cookie `psiclinic_token`.
+2. Verifica a assinatura e expiração com `jose.jwtVerify`.
+3. Retorna os dados do payload (`sub`, `nome`, `email`, `perfil`).
+
+**Resposta de sucesso:**
+```json
+{ "success": true, "user": { "id": "uuid", "nome": "...", "email": "...", "perfil": "..." } }
+```
+
+**Erros:**
+- `401` — Cookie ausente ou token inválido/expirado
+
+---
+
+## Middleware de Autenticação
+
+O arquivo `middleware.ts` (raiz do projeto) protege todas as rotas do dashboard usando a Edge Runtime API do Next.js:
+
+| Rota | Comportamento sem token válido |
+|---|---|
+| `/dashboard/*` | Redireciona para `/` (tela de login) |
+| `/` | Redireciona para `/dashboard` se token válido |
+
+A verificação usa `jose.jwtVerify` diretamente no middleware (compatível com Edge Runtime), sem depender do Node.js runtime.
 
 ---
 

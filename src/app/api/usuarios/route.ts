@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { pool } from "@/lib/db";
+import { hashPassword } from "@/lib/auth";
 
 export async function GET() {
   try {
@@ -27,11 +28,11 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { nome, email, perfil } = body;
+    const { nome, email, perfil, senha } = body;
 
-    if (!nome || !email || !perfil) {
+    if (!nome || !email || !perfil || !senha) {
       return NextResponse.json(
-        { success: false, message: "Campos obrigatórios ausentes: nome, email, perfil" },
+        { success: false, message: "Campos obrigatórios ausentes: nome, email, perfil, senha" },
         { status: 400 }
       );
     }
@@ -43,9 +44,18 @@ export async function POST(request: Request) {
       );
     }
 
+    if (senha.length < 6) {
+      return NextResponse.json(
+        { success: false, message: "A senha deve ter no mínimo 6 caracteres" },
+        { status: 400 }
+      );
+    }
+
+    const senhaHash = await hashPassword(senha);
+
     const result = await pool.query(
-      `INSERT INTO usuarios (nome, email, perfil) VALUES ($1, $2, $3) RETURNING id`,
-      [nome.trim(), email.trim().toLowerCase(), perfil]
+      `INSERT INTO usuarios (nome, email, perfil, senha_hash) VALUES ($1, $2, $3, $4) RETURNING id`,
+      [nome.trim(), email.trim().toLowerCase(), perfil, senhaHash]
     );
 
     return NextResponse.json({
@@ -72,7 +82,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { id, nome, email, perfil } = body;
+    const { id, nome, email, perfil, senha } = body;
 
     if (!id || !nome || !email || !perfil) {
       return NextResponse.json(
@@ -88,10 +98,24 @@ export async function PUT(request: Request) {
       );
     }
 
-    await pool.query(
-      `UPDATE usuarios SET nome = $1, email = $2, perfil = $3 WHERE id = $4 AND ativo = TRUE`,
-      [nome.trim(), email.trim().toLowerCase(), perfil, id]
-    );
+    if (senha && senha.trim()) {
+      if (senha.length < 6) {
+        return NextResponse.json(
+          { success: false, message: "A senha deve ter no mínimo 6 caracteres" },
+          { status: 400 }
+        );
+      }
+      const senhaHash = await hashPassword(senha);
+      await pool.query(
+        `UPDATE usuarios SET nome = $1, email = $2, perfil = $3, senha_hash = $4 WHERE id = $5 AND ativo = TRUE`,
+        [nome.trim(), email.trim().toLowerCase(), perfil, senhaHash, id]
+      );
+    } else {
+      await pool.query(
+        `UPDATE usuarios SET nome = $1, email = $2, perfil = $3 WHERE id = $4 AND ativo = TRUE`,
+        [nome.trim(), email.trim().toLowerCase(), perfil, id]
+      );
+    }
 
     return NextResponse.json({ success: true, message: "Usuário atualizado com sucesso" });
   } catch (error) {

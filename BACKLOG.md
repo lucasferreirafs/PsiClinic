@@ -84,3 +84,23 @@ Este backlog detalha as tarefas pendentes para a integração completa do fronte
 - [x] Remover `mockUsers` da tela de Usuários Administradores.
 - [x] Criar tabela `usuarios` via patch SQL incremental (`docs/sql/patch_usuarios.sql`).
 - [x] `npm run build` validado com sucesso (25 rotas, zero erros TypeScript).
+
+---
+
+## 🔐 Módulo 7: Autenticação JWT
+- [x] Criar patch SQL `docs/sql/patch_auth_usuarios.sql` — adiciona `senha_hash`, `ultimo_login`, `tentativas_login`, `bloqueado` à tabela `usuarios`.
+- [x] Instalar `bcryptjs` (hash de senhas) e `jose` (JWT compatível com Edge Runtime).
+- [x] Criar `.env.example` com placeholders para `DATABASE_URL`, `JWT_SECRET` e variáveis do admin.
+- [x] Criar `src/lib/auth.ts` — utilitários `hashPassword`, `comparePassword`, `signJwt`, `verifyJwt`.
+- [x] Criar `POST /api/auth/login` — valida credenciais, gera JWT, seta cookie `psiclinic_token` (httpOnly, 8h).
+- [x] Criar `POST /api/auth/logout` — remove cookie `psiclinic_token`.
+- [x] Criar `GET /api/auth/me` — lê cookie, valida JWT, retorna dados do usuário autenticado.
+- [x] Atualizar `POST /api/usuarios` — requer senha (mín. 6 chars), armazena `senha_hash` com bcrypt.
+- [x] Atualizar `PUT /api/usuarios` — se senha fornecida, atualiza `senha_hash` com bcrypt.
+- [x] Integrar página de login (`/`) com `POST /api/auth/login` real (remover mock setTimeout).
+- [x] Criar `middleware.ts` — protege `/dashboard/:path*` via JWT; redireciona `/` → `/dashboard` se autenticado.
+- [x] Atualizar `AppSidebar` — exibe nome/email do usuário via `GET /api/auth/me`; logout chama API.
+- [x] Atualizar `/dashboard/usuarios` — envia `senha` no POST e opcionalmente no PUT com validação de mín. 6 chars.
+- [x] Criar `scripts/create-admin-user.js` — script para criar/atualizar usuário `dono` com senha hasheada.
+- [x] Adicionar script `"create-admin"` ao `package.json`.
+- [x] `npm run build` validado com sucesso (39 rotas, middleware ativo, zero erros TypeScript).

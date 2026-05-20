@@ -4,16 +4,27 @@
 
 O projeto utiliza uma única variável de ambiente obrigatória:
 
-| Variável | Descrição |
-|---|---|
-| `DATABASE_URL` | String de conexão PostgreSQL do Supabase |
+| Variável | Obrigatória | Descrição |
+|---|---|---|
+| `DATABASE_URL` | Sim | String de conexão PostgreSQL do Supabase |
+| `JWT_SECRET` | Sim | Segredo para assinar e verificar tokens JWT (mín. 32 chars) |
+| `ADMIN_EMAIL` | Não | E-mail do admin seed (usado por `npm run create-admin`) |
+| `ADMIN_NOME` | Não | Nome do admin seed |
+| `ADMIN_PASSWORD` | Não | Senha em texto puro do admin seed (hasheada pelo script) |
 
-**Formato esperado:**
+**Formato esperado (`.env.local`):**
 ```
 DATABASE_URL=postgresql://usuario:senha@host:5432/postgres?sslmode=require
+JWT_SECRET=segredo_longo_e_aleatorio_minimo_32_caracteres
 ```
 
-> **IMPORTANTE:** Nunca comite o valor real de `DATABASE_URL` no repositório. A variável contém credenciais de banco de dados.
+Para gerar um `JWT_SECRET` seguro:
+```bash
+openssl rand -base64 64
+```
+
+> **IMPORTANTE:** Nunca comite valores reais no repositório. O arquivo `.env.local` está no `.gitignore`.
+> Um modelo com placeholders está disponível em `.env.example`.
 
 ---
 
@@ -144,8 +155,27 @@ Antes de fazer deploy em qualquer ambiente externo:
 | `build` | `next build` | Geração do bundle de produção |
 | `start` | `next start` | Servidor de produção (requer build prévio) |
 | `lint` | `eslint .` | Análise estática de código |
+| `create-admin` | `node scripts/create-admin-user.js` | Cria/atualiza usuário `dono` com senha hasheada |
 
 > **Nota:** O script `lint` requer o `eslint` configurado. O arquivo `eslint.config.mjs` está presente na raiz do projeto.
+
+### Criar usuário administrador inicial
+
+Após aplicar o patch SQL de autenticação (`docs/sql/patch_auth_usuarios.sql`), adicione ao `.env.local`:
+
+```
+ADMIN_EMAIL=admin@psiclinic.com
+ADMIN_NOME=Administrador
+ADMIN_PASSWORD=senha_forte_aqui
+```
+
+Em seguida execute:
+
+```bash
+npm run create-admin
+```
+
+O script faz upsert (`INSERT ... ON CONFLICT DO UPDATE`) — pode ser re-executado para trocar a senha.
 
 ---
 
@@ -154,10 +184,13 @@ Antes de fazer deploy em qualquer ambiente externo:
 Para deploy em plataformas como **Vercel**, **Railway** ou **Render**:
 
 1. Acesse as configurações do projeto na plataforma.
-2. Adicione a variável de ambiente `DATABASE_URL` com o valor da string de conexão do Supabase.
+2. Adicione as variáveis de ambiente:
+   - `DATABASE_URL` — string de conexão do Supabase.
+   - `JWT_SECRET` — segredo de assinatura JWT (gere com `openssl rand -base64 64`).
 3. Faça o deploy (conectando ao repositório GitHub ou via CLI).
-4. A plataforma injeta a variável no runtime do Next.js automaticamente.
+4. A plataforma injeta as variáveis no runtime do Next.js automaticamente.
 
 **Vercel (recomendado para Next.js):**
-- Dashboard > Project > Settings > Environment Variables > Add `DATABASE_URL`.
+- Dashboard > Project > Settings > Environment Variables.
+- Adicione `DATABASE_URL` e `JWT_SECRET`.
 - O deploy é disparado automaticamente a cada push na branch principal.

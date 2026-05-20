@@ -123,18 +123,27 @@ export default function UsersPage() {
       return
     }
 
+    if (!editingUser && formData.password.length < 6) {
+      toast.error("A senha deve ter no mínimo 6 caracteres.")
+      return
+    }
+
     setSubmitting(true)
     try {
       if (editingUser) {
+        const putBody: Record<string, string> = {
+          id: editingUser.id,
+          nome: formData.name,
+          email: formData.email,
+          perfil: formData.role,
+        }
+        if (formData.password && formData.password.trim()) {
+          putBody.senha = formData.password
+        }
         const res = await fetch("/api/usuarios", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id: editingUser.id,
-            nome: formData.name,
-            email: formData.email,
-            perfil: formData.role,
-          }),
+          body: JSON.stringify(putBody),
         })
         const json = await res.json()
         if (!json.success) throw new Error(json.message)
@@ -147,6 +156,7 @@ export default function UsersPage() {
             nome: formData.name,
             email: formData.email,
             perfil: formData.role,
+            senha: formData.password,
           }),
         })
         const json = await res.json()

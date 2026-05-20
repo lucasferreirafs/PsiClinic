@@ -31,9 +31,9 @@
 
 O presente documento descreve o projeto **PsiClinic**, desenvolvido como trabalho final da disciplina de Programação e Otimização de Banco de Dados (POBD), ministrada pelo professor André Ribeiro na UNIBRA.
 
-O PsiClinic é um sistema web de gestão clínica voltado para clínicas de psicologia, integrando um banco de dados PostgreSQL hospedado no Supabase a uma aplicação web moderna construída com Next.js 15 e TypeScript.
+O PsiClinic é um sistema web de gestão clínica voltado para clínicas de psicologia, integrando um banco de dados PostgreSQL hospedado no Supabase a uma aplicação web moderna construída com Next.js 16.2.6 e TypeScript.
 
-O projeto foi desenvolvido ao longo de seis módulos progressivos:
+O projeto foi desenvolvido ao longo de sete módulos progressivos:
 
 | Módulo | Descrição |
 |---|---|
@@ -43,6 +43,7 @@ O projeto foi desenvolvido ao longo de seis módulos progressivos:
 | Módulo 4 | Controle de Estoque |
 | Módulo 5 | Relatórios e Dashboards |
 | Módulo 6 | Infraestrutura e Entrega Final |
+| Módulo 7 | Autenticação JWT (login, logout, proteção de rotas) |
 
 ---
 
@@ -294,14 +295,15 @@ Nome padrão: `trg_upd_timestamp_{tabela}`. Executam `fn_atualizar_timestamp()` 
 
 ## 9. Integração com a API
 
-A camada de API foi implementada como Route Handlers do Next.js 15 (App Router), em `src/app/api/`. São **20 endpoints** no total, organizados por módulo.
+A camada de API foi implementada como Route Handlers do Next.js 16.2.6 (App Router), em `src/app/api/`. São **31 endpoints** no total, organizados por módulo.
 
 ### Regras de segurança aplicadas em todos os endpoints
 
 - `pool` (conexão com banco) importado exclusivamente em arquivos server-side.
 - Queries 100% parametrizadas (`$1`, `$2`, ...) — sem concatenação de strings com dados do usuário.
 - Operações de escrita em tabelas de domínio delegadas obrigatoriamente a stored procedures.
-- `DATABASE_URL` nunca exposta em logs ou respostas.
+- `DATABASE_URL` e `JWT_SECRET` nunca expostos em logs ou respostas do frontend.
+- Senhas armazenadas como hash bcrypt (12 rounds) — nunca em texto puro.
 
 ### Rotas por módulo
 
@@ -320,9 +322,22 @@ A camada de API foi implementada como Route Handlers do Next.js 15 (App Router),
 
 **Relatórios:** `GET /api/relatorios/resumo`, `GET /api/relatorios/financeiro`, `GET /api/relatorios/pacientes`, `GET /api/relatorios/agenda`, `GET /api/relatorios/estoque`
 
-**Usuários:** `GET/POST/PUT/DELETE /api/usuarios` — tabela `usuarios` criada via patch incremental
+**Usuários:** `GET/POST/PUT/DELETE /api/usuarios` — tabela `usuarios` criada via patch incremental; `POST` e `PUT` armazenam `senha_hash` via bcrypt
+
+**Autenticação:**
+- `POST /api/auth/login` — valida credenciais, assina JWT HS256 (8h), seta cookie httpOnly `psiclinic_token`
+- `POST /api/auth/logout` — remove o cookie de sessão
+- `GET /api/auth/me` — verifica o cookie e retorna dados do usuário autenticado
 
 **Diagnóstico:** `GET /api/test-db`
+
+### Middleware de autenticação
+
+O arquivo `middleware.ts` (raiz do projeto) intercepta requisições na Edge Runtime antes que cheguem às páginas:
+
+- Rotas `/dashboard/*` sem cookie válido → redirecionamento para `/` (login).
+- Rota `/` com cookie válido → redirecionamento para `/dashboard`.
+- Utiliza `jose.jwtVerify` (compatível com Edge Runtime) sem dependências Node.js.
 
 ---
 
@@ -458,6 +473,8 @@ Os **Triggers** foram um dos aspectos mais impactantes do projeto. A auditoria c
 
 A integração com o **Supabase** mostrou como um banco PostgreSQL pode ser disponibilizado na nuvem de forma simples, com suporte a SSL e autenticação, mantendo toda a expressividade e poder do PostgreSQL. O projeto simulou de forma realista um sistema clínico em produção, com separação clara entre camada de dados, camada de API server-side e camada de apresentação client-side.
 
+O **Módulo 7**, de autenticação JWT, complementou o projeto com uma camada de segurança de acesso: senhas armazenadas como hash bcrypt (12 rounds), sessão via cookie httpOnly inacessível a JavaScript, tokens JWT HS256 com expiração de 8 horas, e proteção de rotas do dashboard via middleware Edge Runtime com a biblioteca `jose`. Esse módulo demonstrou a importância de integrar práticas modernas de segurança web desde a concepção do sistema.
+
 Em suma, o PsiClinic consolidou a compreensão de que a disciplina de banco de dados vai muito além do SELECT básico: envolve modelagem cuidadosa, otimização de consultas via views, segurança e auditoria via triggers, e encapsulamento de regras via procedures e functions — recursos que fazem a diferença entre um banco de dados simples e um banco de dados profissional.
 
 ---
@@ -466,39 +483,48 @@ Em suma, o PsiClinic consolidou a compreensão de que a disciplina de banco de d
 
 ### Banco de Dados
 - [x] Schema aplicado no Supabase
-- [x] 10 tabelas criadas com constraints e relacionamentos
-- [x] 12 Stored Procedures implementadas
+- [x] 11 tabelas criadas com constraints e relacionamentos (incluindo `usuarios`)
+- [x] 14 Stored Procedures implementadas
 - [x] 6 Functions implementadas
 - [x] 16+ Triggers implementados
 - [x] 4 Views implementadas
+- [x] 4 patches SQL incrementais em `docs/sql/` (incluindo `patch_auth_usuarios.sql`)
 
 ### Backend / API
-- [x] 25 rotas de API implementadas
+- [x] 31 rotas de API implementadas
 - [x] Conexão com banco validada via `/api/test-db`
 - [x] Queries parametrizadas em 100% das rotas
 - [x] Stored procedures chamadas para todas as escritas de domínio
 - [x] `PUT /api/pacientes` chama `sp_atualizar_paciente_completo`
 - [x] `PUT /api/pacientes/anamnese` chama `sp_atualizar_anamnese_completa`
-- [x] `GET/POST/PUT/DELETE /api/usuarios` implementados
+- [x] `GET/POST/PUT/DELETE /api/usuarios` com senha hasheada (bcrypt)
+- [x] `POST /api/auth/login` — JWT em cookie httpOnly
+- [x] `POST /api/auth/logout` — remoção do cookie
+- [x] `GET /api/auth/me` — usuário autenticado via cookie
 
-### Frontend
-- [x] 6 módulos integrados com dados reais (incluindo Usuários)
-- [x] Dados mockados removidos (incluindo `mockUsers`)
+### Frontend e Middleware
+- [x] 7 módulos integrados com dados reais (incluindo Usuários e Autenticação)
+- [x] Dados mockados removidos (incluindo `mockUsers` e mock de login)
 - [x] `pool` não exposto no cliente
+- [x] `JWT_SECRET` nunca exposto no frontend
+- [x] `middleware.ts` protege `/dashboard/*` na Edge Runtime
 
 ### Qualidade
-- [x] `npm run build` executado com sucesso (25 rotas, zero erros TypeScript)
+- [x] `npm run build` executado com sucesso (39 rotas, middleware ativo, zero erros TypeScript)
 - [x] `npx tsc --noEmit` sem erros
 - [x] `.env.local` fora do Git
+- [x] `.env.example` com placeholders criado
 
 ### Documentação
 - [x] 10 documentos técnicos criados na pasta `docs/`
-- [x] Pasta `docs/sql/` com 3 patches SQL incrementais
+- [x] Pasta `docs/sql/` com 4 patches SQL incrementais
 - [x] DER em PlantUML gerado
 - [x] `DOCUMENTACAO_FINAL.md` consolidado e atualizado
 - [x] `README.md` atualizado (versão corrigida para Next.js 16.2.6)
 
 ### Entrega
-- [ ] Patches SQL aplicados no Supabase SQL Editor
+- [ ] Patches SQL aplicados no Supabase SQL Editor (na ordem descrita no README)
+- [ ] `JWT_SECRET` configurado em `.env.local` e no ambiente de produção
+- [ ] Usuário admin criado com `npm run create-admin`
 - [ ] PDF gerado a partir deste documento
 - [ ] Submissão no Google Classroom até 03/06/2026

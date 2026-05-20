@@ -21,14 +21,18 @@ export default function LoginPage() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simulação de login
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, senha: password }),
+    })
+    const json = await res.json()
 
-    if (email && password) {
+    if (json.success) {
       toast.success("Login realizado com sucesso!")
       router.push("/dashboard")
     } else {
-      toast.error("Por favor, preencha todos os campos.")
+      toast.error(json.message || "E-mail ou senha inválidos.")
     }
 
     setIsLoading(false)

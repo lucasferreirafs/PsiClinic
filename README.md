@@ -16,6 +16,7 @@ Sistema web de gestão clínica desenvolvido como projeto final da disciplina **
 | Controle de Estoque | Itens, movimentações, alertas críticos | Concluído |
 | Relatórios e Dashboards | Gráficos integrados com views do banco | Concluído |
 | Usuários Administrativos | Listagem, cadastro e edição de usuários do sistema | Concluído |
+| Autenticação JWT | Login, logout, proteção de rotas, cookie httpOnly | Concluído |
 
 ---
 
@@ -36,10 +37,11 @@ npm install
 
 ### 3. Configure as variáveis de ambiente
 
-Crie o arquivo `.env.local` na raiz do projeto:
+Crie o arquivo `.env.local` na raiz do projeto (veja `.env.example`):
 
 ```bash
 DATABASE_URL=postgresql://[usuario]:[senha]@[host]:5432/[banco]?sslmode=require
+JWT_SECRET=gere_um_segredo_longo_e_aleatorio
 ```
 
 > O arquivo `.env.local` está no `.gitignore` e **nunca deve ser commitado**.
@@ -85,6 +87,7 @@ Para aplicar os patches adicionais (após o schema base):
 # 1. docs/sql/patch_sp_atualizar_anamnese_completa.sql
 # 2. docs/sql/patch_sp_atualizar_paciente_completo.sql
 # 3. docs/sql/patch_usuarios.sql
+# 4. docs/sql/patch_auth_usuarios.sql
 ```
 
 ---
@@ -114,14 +117,20 @@ app-clinica-psicologica/
 │   │   │   ├── pacientes/
 │   │   │   ├── profissionais/
 │   │   │   ├── relatorios/
+│   │   │   ├── auth/            # login, logout, me
 │   │   │   ├── usuarios/
 │   │   │   └── test-db/
 │   │   └── dashboard/           # Páginas do sistema
 │   ├── components/              # Componentes reutilizáveis
 │   └── lib/
-│       └── db.ts                # Conexão com o banco (pool)
+│       ├── db.ts                # Conexão com o banco (pool)
+│       └── auth.ts              # Utilitários JWT e bcrypt
+├── middleware.ts                # Proteção de rotas /dashboard/*
+├── scripts/
+│   └── create-admin-user.js     # Seed do usuário administrador
 ├── database_schema.sql          # Schema completo do PostgreSQL
 ├── .env.local                   # Variáveis de ambiente (não commitado)
+├── .env.example                 # Modelo de variáveis de ambiente
 └── package.json
 ```
 
@@ -142,7 +151,10 @@ app-clinica-psicologica/
 | `POST /api/estoque/movimentar` | Movimentação de estoque |
 | `GET /api/relatorios/resumo` | Cards do dashboard |
 | `GET /api/usuarios` | Lista usuários administrativos |
-| `POST /api/usuarios` | Cadastra novo usuário |
+| `POST /api/usuarios` | Cadastra novo usuário (com senha hasheada) |
+| `POST /api/auth/login` | Autenticação — seta cookie JWT httpOnly |
+| `POST /api/auth/logout` | Encerra sessão — remove cookie |
+| `GET /api/auth/me` | Retorna usuário autenticado pelo cookie |
 
 Documentação completa das APIs em `docs/07-integracao-api.md`.
 
@@ -151,11 +163,14 @@ Documentação completa das APIs em `docs/07-integracao-api.md`.
 ## Scripts Disponíveis
 
 ```bash
-npm run dev      # Servidor de desenvolvimento
-npm run build    # Build de produção (valida TypeScript)
-npm start        # Servidor de produção
-npm run lint     # Análise estática de código
+npm run dev           # Servidor de desenvolvimento
+npm run build         # Build de produção (valida TypeScript)
+npm start             # Servidor de produção
+npm run lint          # Análise estática de código
+npm run create-admin  # Cria/atualiza usuário administrador no banco
 ```
+
+Para `create-admin`, configure `ADMIN_EMAIL`, `ADMIN_NOME` e `ADMIN_PASSWORD` no `.env.local`.
 
 ---
 
@@ -170,10 +185,14 @@ A pasta `docs/` contém documentação técnica completa:
 
 ## Segurança
 
-- `DATABASE_URL` configurada apenas via variável de ambiente.
+- `DATABASE_URL` e `JWT_SECRET` configurados apenas via variável de ambiente.
 - `.env.local` fora do Git (`.gitignore`).
 - Todas as queries usam parâmetros (`$1`, `$2`) — sem concatenação de strings.
 - `pool` importado exclusivamente em arquivos server-side (API routes).
+- Senhas armazenadas como hash bcrypt (12 rounds) — nunca em texto puro.
+- Sessão via cookie `psiclinic_token` httpOnly (inacessível a JavaScript no browser).
+- JWT assinado com HS256 e validade de 8 horas.
+- Middleware protege todas as rotas `/dashboard/*` na Edge (sem vazamento de dados ao cliente).
 - Nenhuma credencial no código-fonte.
 
 ---

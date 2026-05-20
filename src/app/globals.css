@@ -136,3 +136,41 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ── Print Styles for PDF Export ── */
+@media print {
+  /* Hide sidebar, top navigation header, tabs bar, filters, and export button */
+  aside,
+  header,
+  .no-print,
+  .print\:hidden,
+  button,
+  [role="tablist"] {
+    display: none !important;
+  }
+
+  /* Reset main container layout for full width printing */
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* Ensure cards and background look crisp in black/white or color print */
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .border {
+    border-color: #e2e8f0 !important;
+  }
+
+  /* Avoid charts clipping inside hidden containers */
+  .recharts-responsive-container {
+    width: 100% !important;
+    height: 400px !important;
+  }
+}

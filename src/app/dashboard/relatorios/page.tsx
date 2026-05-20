@@ -241,7 +241,9 @@ export default function RelatoriosPage() {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
-  const handleExport = () => toast.success("Relatório exportado com sucesso!")
+  const handleExport = () => {
+    window.print()
+  }
 
   const handleApplyFilters = () => {
     setAppliedDates(dateRange)
@@ -265,14 +267,14 @@ export default function RelatoriosPage() {
           <h1 className="text-2xl font-bold tracking-tight">Relatórios</h1>
           <p className="text-muted-foreground">Visualize e exporte relatórios da clínica</p>
         </div>
-        <Button onClick={handleExport}>
+        <Button onClick={handleExport} className="print:hidden">
           <Download className="mr-2 h-4 w-4" />
           Exportar PDF
         </Button>
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="print:hidden">
         <CardHeader>
           <CardTitle className="text-base">Filtros</CardTitle>
         </CardHeader>
@@ -318,7 +320,7 @@ export default function RelatoriosPage() {
       </Card>
 
       <Tabs defaultValue="financeiro" value={reportType} onValueChange={setReportType}>
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 print:hidden">
           <TabsTrigger value="financeiro" className="gap-2">
             <DollarSign className="h-4 w-4" />
             <span className="hidden sm:inline">Financeiro</span>

@@ -17,6 +17,7 @@ import {
   Loader2,
   Ban,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -64,6 +65,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { toast } from "sonner"
 import { format, addDays, startOfWeek, isSameDay } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { PendingAppointmentsAlert } from "@/components/pending-appointments-alert"
 
 type AppointmentStatus = "agendado" | "confirmado" | "realizado" | "cancelado" | "faltou"
 type AppointmentType = "presencial" | "online"
@@ -143,6 +145,7 @@ export default function AgendaPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM)
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set())
 
   const fetchAppointments = useCallback(async () => {
     setLoadingAppointments(true)
@@ -158,6 +161,15 @@ export default function AgendaPage() {
       toast.error("Erro de conexão ao carregar agenda")
     } finally {
       setLoadingAppointments(false)
+    }
+  }, [])
+
+  const handleStatusResolved = useCallback((id: string, acao: string) => {
+    const newStatus = STATUS_MAP[acao]
+    if (newStatus) {
+      setAppointments((prev) =>
+        prev.map((apt) => (apt.id === id ? { ...apt, status: newStatus } : apt))
+      )
     }
   }, [])
 
@@ -575,6 +587,11 @@ export default function AgendaPage() {
         </Dialog>
       </div>
 
+      <PendingAppointmentsAlert
+        onPendingIdsChange={setPendingIds}
+        onStatusResolved={handleStatusResolved}
+      />
+
       {/* Calendar Week View */}
       <Card>
         <CardHeader className="pb-4">
@@ -717,7 +734,17 @@ export default function AgendaPage() {
                           <span className="capitalize">{appointment.type}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{getStatusBadge(appointment.status)}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {pendingIds.has(appointment.id) && (
+                            <AlertTriangle
+                              className="h-4 w-4 text-amber-500 shrink-0"
+                              aria-label="Pendente de confirmação"
+                            />
+                          )}
+                          {getStatusBadge(appointment.status)}
+                        </div>
+                      </TableCell>
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

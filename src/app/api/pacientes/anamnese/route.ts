@@ -59,8 +59,29 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { anamneseId, observacoesPsicologo, objetivoTerapia, ansiedade } =
-      body;
+    const {
+      anamneseId,
+      // Campos clínicos da anamnese (direto na tabela)
+      mainComplaint,
+      problemDuration,
+      previousTherapy,
+      previousTherapyDetails,
+      physicalDiseases,
+      medications,
+      psychiatricHistory,
+      familyMentalHealth,
+      familyRelationship,
+      sleepQuality,
+      eatingHabits,
+      substanceUse,
+      physicalActivity,
+      anxietyLevel,
+      moodDescription,
+      stressLevel,
+      recurrentThoughts,
+      therapyGoal,
+      psychologistNotes,
+    } = body;
 
     if (!anamneseId) {
       return NextResponse.json(
@@ -69,23 +90,58 @@ export async function PUT(request: Request) {
       );
     }
 
-    if (ansiedade && !ANSIEDADE_VALIDOS.includes(ansiedade)) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Valor de ansiedade inválido. Use: leve, moderada ou intensa",
-        },
-        { status: 400 }
-      );
-    }
+    const ansiedadeValida = anxietyLevel && ANSIEDADE_VALIDOS.includes(anxietyLevel)
+      ? anxietyLevel
+      : null;
 
+    const fezTerapia =
+      previousTherapy === "sim" ? true : previousTherapy === "nao" ? false : null;
+
+    // Atualiza os campos clínicos diretamente na tabela anamneses
+    // Os dados pessoais (nome, CPF, telefone, etc.) ficam na tabela pacientes e não são editados aqui
     await pool.query(
-      `CALL sp_atualizar_anamnese($1::UUID, $2::TEXT, $3::TEXT, $4::nivel_ansiedade)`,
+      `UPDATE anamneses SET
+        motivo_consulta           = COALESCE($2, motivo_consulta),
+        tempo_queixa              = $3,
+        fez_terapia_antes         = $4,
+        tempo_terapia_anterior    = $5,
+        doencas_fisicas           = $6,
+        uso_medicamentos          = $7,
+        historico_psiquiatrico    = $8,
+        doencas_mentais_familia   = $9,
+        relacao_familiar_desc     = $10,
+        habitos_sono              = $11,
+        habitos_alimentacao       = $12,
+        uso_substancias           = $13,
+        atividade_fisica          = $14,
+        ansiedade                 = $15::nivel_ansiedade,
+        humor                     = $16,
+        estresse                  = $17,
+        pensamentos_recorrentes   = $18,
+        objetivo_terapia          = $19,
+        observacoes_psicologo     = $20
+      WHERE id = $1 AND ativo = TRUE`,
       [
         anamneseId,
-        observacoesPsicologo || null,
-        objetivoTerapia || null,
-        ansiedade || null,
+        mainComplaint || null,
+        problemDuration || null,
+        fezTerapia,
+        previousTherapyDetails || null,
+        physicalDiseases || null,
+        medications || null,
+        psychiatricHistory || null,
+        familyMentalHealth || null,
+        familyRelationship || null,
+        sleepQuality || null,
+        eatingHabits || null,
+        substanceUse || null,
+        physicalActivity || null,
+        ansiedadeValida,
+        moodDescription || null,
+        stressLevel || null,
+        recurrentThoughts || null,
+        therapyGoal || null,
+        psychologistNotes || null,
       ]
     );
 

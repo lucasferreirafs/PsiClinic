@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, Suspense } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import {
   Save,
   User,
@@ -12,6 +12,9 @@ import {
   FileText,
   AlertCircle,
   Loader2,
+  Search,
+  ChevronRight,
+  Lock,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,6 +36,8 @@ import {
 } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 
 function calcularIdade(dataNascimento: string): string {
@@ -45,27 +50,165 @@ function calcularIdade(dataNascimento: string): string {
   return String(age)
 }
 
-function AnamneseForm() {
-  const searchParams = useSearchParams()
-  const patientId = searchParams.get("paciente")
+const formatCPF = (value: string) => {
+  const v = value.replace(/\D/g, "").slice(0, 11)
+  if (v.length <= 3) return v
+  if (v.length <= 6) return `${v.slice(0, 3)}.${v.slice(3)}`
+  if (v.length <= 9) return `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6)}`
+  return `${v.slice(0, 3)}.${v.slice(3, 6)}.${v.slice(6, 9)}-${v.slice(9)}`
+}
 
-  const [anamneseId, setAnamneseId] = useState<string | null>(null)
+const formatPhone = (value: string) => {
+  const v = value.replace(/\D/g, "").slice(0, 11)
+  if (v.length <= 2) return v
+  if (v.length <= 6) return `(${v.slice(0, 2)}) ${v.slice(2)}`
+  if (v.length <= 10) return `(${v.slice(0, 2)}) ${v.slice(2, 6)}-${v.slice(6)}`
+  return `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7)}`
+}
+
+type Patient = {
+  id: string
+  nome_completo: string
+  cpf: string
+  email: string
+  telefone: string
+}
+
+// ─────────────────────────────────────────────
+// Componente: Seleção de Paciente
+// ─────────────────────────────────────────────
+function PatientSelector({ onSelect }: { onSelect: (p: Patient) => void }) {
+  const [search, setSearch] = useState("")
+  const [patients, setPatients] = useState<Patient[]>([])
   const [loading, setLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
 
-  const [formData, setFormData] = useState({
-    name: "",
-    birthDate: "",
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch("/api/pacientes")
+        const json = await res.json()
+        if (json.success) setPatients(json.data)
+      } catch {
+        toast.error("Erro ao carregar lista de pacientes")
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
+
+  const filtered = patients.filter((p) =>
+    p.nome_completo.toLowerCase().includes(search.toLowerCase()) ||
+    (p.cpf && p.cpf.replace(/\D/g, "").includes(search.replace(/\D/g, "")))
+  )
+
+  const getInitials = (name: string) =>
+    name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Ficha de Anamnese</h1>
+        <p className="text-muted-foreground">
+          Selecione o paciente para acessar ou preencher a ficha de anamnese.
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Search className="h-5 w-5" />
+            Selecionar Paciente
+          </CardTitle>
+          <CardDescription>
+            Busque pelo nome ou CPF do paciente cadastrado no sistema.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nome ou CPF..."
+              className="pl-9"
+              autoFocus
+            />
+          </div>
+
+          {loading ? (
+            <div className="flex items-center gap-2 py-8 justify-center text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Carregando pacientes...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-8 text-center text-muted-foreground text-sm">
+              {search ? "Nenhum paciente encontrado para a busca." : "Nenhum paciente cadastrado."}
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-1">
+              {filtered.map((p) => (
+                <button
+                  key={p.id}
+                  onClick={() => onSelect(p)}
+                  className="w-full flex items-center gap-4 p-3 rounded-lg border border-border/50 hover:border-primary/60 hover:bg-primary/5 transition-all text-left group"
+                >
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                      {getInitials(p.nome_completo)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{p.nome_completo}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {p.cpf ? formatCPF(p.cpf) : "CPF não informado"} • {p.email || "E-mail não informado"}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {patients.length > 0 && !search && (
+            <p className="text-xs text-muted-foreground text-right">
+              {patients.length} paciente{patients.length !== 1 ? "s" : ""} cadastrado{patients.length !== 1 ? "s" : ""}
+            </p>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────
+// Componente: Formulário de Anamnese
+// ─────────────────────────────────────────────
+function AnamneseFormContent({ patientId }: { patientId: string }) {
+  const [anamneseId, setAnamneseId] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState("dados-pessoais")
+
+  // Dados pessoais (somente leitura — vêm do cadastro do paciente)
+  const [personalData, setPersonalData] = useState({
+    nome_completo: "",
+    data_nascimento: "",
     age: "",
     cpf: "",
-    phone: "",
+    telefone: "",
     email: "",
-    address: "",
-    profession: "",
-    civilStatus: "",
-    emergencyName: "",
-    emergencyPhone: "",
-    emergencyRelation: "",
+    endereco: "",
+    profissao: "",
+    estado_civil: "",
+    contato_emergencia_nome: "",
+    contato_emergencia_telefone: "",
+    contato_emergencia_relacao: "",
+  })
+
+  // Dados clínicos (editáveis)
+  const [clinicalData, setClinicalData] = useState({
     mainComplaint: "",
     problemDuration: "",
     previousTherapy: "",
@@ -88,7 +231,6 @@ function AnamneseForm() {
   })
 
   const fetchAnamnese = useCallback(async () => {
-    if (!patientId) return
     setLoading(true)
     try {
       const res = await fetch(`/api/pacientes/anamnese?pacienteId=${patientId}`)
@@ -96,22 +238,31 @@ function AnamneseForm() {
       if (json.success && json.data) {
         const d = json.data
         setAnamneseId(d.id)
-        setFormData({
-          name: d.nome_completo ?? "",
-          birthDate: d.data_nascimento ? d.data_nascimento.split("T")[0] : "",
+
+        // Dados pessoais (readonly) vindos do paciente
+        setPersonalData({
+          nome_completo: d.nome_completo ?? "",
+          data_nascimento: d.data_nascimento ? d.data_nascimento.split("T")[0] : "",
           age: d.data_nascimento ? calcularIdade(d.data_nascimento.split("T")[0]) : "",
-          cpf: d.cpf ?? "",
-          phone: d.telefone ?? "",
+          cpf: d.cpf ? formatCPF(d.cpf.trim()) : "",
+          telefone: d.telefone ? formatPhone(d.telefone) : "",
           email: d.email ?? "",
-          address: d.endereco ?? "",
-          profession: d.profissao ?? "",
-          civilStatus: d.estado_civil ?? "",
-          emergencyName: d.contato_emergencia_nome ?? "",
-          emergencyPhone: d.contato_emergencia_telefone ?? "",
-          emergencyRelation: d.contato_emergencia_relacao ?? "",
+          endereco: d.endereco ?? "",
+          profissao: d.profissao ?? "",
+          estado_civil: d.estado_civil ?? "",
+          contato_emergencia_nome: d.contato_emergencia_nome ?? "",
+          contato_emergencia_telefone: d.contato_emergencia_telefone
+            ? formatPhone(d.contato_emergencia_telefone)
+            : "",
+          contato_emergencia_relacao: d.contato_emergencia_relacao ?? "",
+        })
+
+        // Dados clínicos (editáveis) vindos da anamnese
+        setClinicalData({
           mainComplaint: d.motivo_consulta ?? "",
           problemDuration: d.tempo_queixa ?? "",
-          previousTherapy: d.fez_terapia_antes === true ? "sim" : d.fez_terapia_antes === false ? "nao" : "",
+          previousTherapy:
+            d.fez_terapia_antes === true ? "sim" : d.fez_terapia_antes === false ? "nao" : "",
           previousTherapyDetails: d.tempo_terapia_anterior ?? "",
           physicalDiseases: d.doencas_fisicas ?? "",
           medications: d.uso_medicamentos ?? "",
@@ -129,6 +280,8 @@ function AnamneseForm() {
           therapyGoal: d.objetivo_terapia ?? "",
           psychologistNotes: d.observacoes_psicologo ?? "",
         })
+      } else {
+        toast.error("Anamnese não encontrada para este paciente.")
       }
     } catch {
       toast.error("Erro ao carregar dados da anamnese")
@@ -141,21 +294,21 @@ function AnamneseForm() {
     fetchAnamnese()
   }, [fetchAnamnese])
 
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => {
-      const next = { ...prev, [field]: value }
-      if (field === "birthDate" && value) {
-        next.age = calcularIdade(value)
-      }
-      return next
-    })
+  const handleClinicalChange = (field: string, value: string) => {
+    setClinicalData((prev) => ({ ...prev, [field]: value }))
   }
 
   const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault()
 
     if (!anamneseId) {
-      toast.error("Selecione um paciente para salvar a anamnese")
+      toast.error("Não foi possível identificar a anamnese deste paciente.")
+      return
+    }
+
+    if (!clinicalData.mainComplaint.trim()) {
+      toast.error("O Motivo da Consulta é obrigatório.")
+      setActiveTab("queixa")
       return
     }
 
@@ -164,12 +317,7 @@ function AnamneseForm() {
       const res = await fetch("/api/pacientes/anamnese", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          anamneseId,
-          observacoesPsicologo: formData.psychologistNotes || null,
-          objetivoTerapia: formData.therapyGoal || null,
-          ansiedade: formData.anxietyLevel || null,
-        }),
+        body: JSON.stringify({ anamneseId, ...clinicalData }),
       })
       const json = await res.json()
       if (json.success) {
@@ -184,18 +332,52 @@ function AnamneseForm() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-2 text-muted-foreground text-sm animate-pulse">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Carregando ficha do paciente...
+        </div>
+        {[1, 2].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <CardHeader>
+              <div className="h-5 w-40 bg-secondary rounded" />
+              <div className="h-4 w-60 bg-secondary rounded" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[1, 2, 3].map((j) => (
+                  <div key={j} className="h-10 bg-secondary/50 rounded" />
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  const estadoCivilLabel: Record<string, string> = {
+    solteiro: "Solteiro(a)",
+    casado: "Casado(a)",
+    divorciado: "Divorciado(a)",
+    viuvo: "Viúvo(a)",
+    "uniao-estavel": "União Estável",
+  }
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Ficha de Anamnese</h1>
           <p className="text-muted-foreground">
-            {patientId
-              ? "Preencha a ficha do paciente selecionado"
-              : "Preencha as informações completas do paciente"}
+            Paciente:{" "}
+            <span className="font-medium text-foreground">{personalData.nome_completo}</span>
           </p>
         </div>
-        <Button onClick={() => handleSubmit()} disabled={saving || loading || !anamneseId}>
+        <Button onClick={() => handleSubmit()} disabled={saving || !anamneseId}>
           {saving ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
@@ -205,21 +387,8 @@ function AnamneseForm() {
         </Button>
       </div>
 
-      {loading && (
-        <div className="flex items-center gap-2 text-muted-foreground text-sm">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Carregando dados do paciente...
-        </div>
-      )}
-
-      {patientId && !loading && !anamneseId && (
-        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
-          Anamnese não encontrada para este paciente. Cadastre o paciente primeiro.
-        </div>
-      )}
-
       <form onSubmit={handleSubmit}>
-        <Tabs defaultValue="dados-pessoais" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 h-auto gap-2">
             <TabsTrigger value="dados-pessoais" className="gap-2">
               <User className="h-4 w-4" />
@@ -228,13 +397,11 @@ function AnamneseForm() {
             </TabsTrigger>
             <TabsTrigger value="historico" className="gap-2">
               <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Histórico</span>
-              <span className="sm:hidden">Histórico</span>
+              <span>Histórico</span>
             </TabsTrigger>
             <TabsTrigger value="habitos" className="gap-2">
               <Heart className="h-4 w-4" />
-              <span className="hidden sm:inline">Hábitos</span>
-              <span className="sm:hidden">Hábitos</span>
+              <span>Hábitos</span>
             </TabsTrigger>
             <TabsTrigger value="emocional" className="gap-2">
               <Brain className="h-4 w-4" />
@@ -243,122 +410,114 @@ function AnamneseForm() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Dados Pessoais */}
+          {/* ─── Dados Pessoais (somente leitura) ─── */}
           <TabsContent value="dados-pessoais" className="space-y-6">
+            {/* Banner informativo */}
+            <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950">
+              <Lock className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 shrink-0" />
+              <div>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  Dados do Cadastro do Paciente
+                </p>
+                <p className="text-xs text-blue-700 dark:text-blue-300 mt-0.5">
+                  Estas informações vêm do cadastro do paciente e não podem ser editadas aqui.
+                  Para alterá-las, acesse a tela de <strong>Pacientes</strong>.
+                </p>
+              </div>
+            </div>
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <User className="h-5 w-5" />
-                  Dados Pessoais
+                  Informações Pessoais
                 </CardTitle>
-                <CardDescription>
-                  Informações básicas do paciente
-                </CardDescription>
+                <CardDescription>Dados cadastrados na tela de Pacientes</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nome Completo</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => handleChange("name", e.target.value)}
-                      placeholder="Nome completo do paciente"
-                    />
+                    <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                      Nome Completo
+                    </Label>
+                    <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50 border border-border/50">
+                      <span className="text-sm">{personalData.nome_completo || "—"}</span>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="birthDate">Data de Nascimento</Label>
-                      <Input
-                        id="birthDate"
-                        type="date"
-                        value={formData.birthDate}
-                        onChange={(e) => handleChange("birthDate", e.target.value)}
-                      />
+                      <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                        Nascimento
+                      </Label>
+                      <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
+                        <span className="text-sm">
+                          {personalData.data_nascimento
+                            ? new Date(personalData.data_nascimento + "T12:00:00").toLocaleDateString("pt-BR")
+                            : "—"}
+                        </span>
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="age">Idade</Label>
-                      <Input
-                        id="age"
-                        value={formData.age}
-                        readOnly
-                        placeholder="Auto"
-                        className="bg-muted"
-                      />
+                      <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">
+                        Idade
+                      </Label>
+                      <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
+                        <span className="text-sm font-medium text-primary">
+                          {personalData.age ? `${personalData.age} anos` : "—"}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF</Label>
-                    <Input
-                      id="cpf"
-                      value={formData.cpf}
-                      onChange={(e) => handleChange("cpf", e.target.value)}
-                      placeholder="000.000.000-00"
-                    />
+                    <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">CPF</Label>
+                    <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
+                      <span className="text-sm font-mono">{personalData.cpf || "—"}</span>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Telefone</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => handleChange("phone", e.target.value)}
-                      placeholder="(00) 00000-0000"
-                    />
+                    <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Telefone</Label>
+                    <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
+                      <span className="text-sm">{personalData.telefone || "—"}</span>
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => handleChange("email", e.target.value)}
-                      placeholder="email@exemplo.com"
-                    />
+                    <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">E-mail</Label>
+                    <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
+                      <span className="text-sm truncate">{personalData.email || "—"}</span>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="profession">Profissão</Label>
-                    <Input
-                      id="profession"
-                      value={formData.profession}
-                      onChange={(e) => handleChange("profession", e.target.value)}
-                      placeholder="Profissão atual"
-                    />
+                    <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Profissão</Label>
+                    <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
+                      <span className="text-sm">{personalData.profissao || "—"}</span>
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="address">Endereço</Label>
-                    <Input
-                      id="address"
-                      value={formData.address}
-                      onChange={(e) => handleChange("address", e.target.value)}
-                      placeholder="Endereço completo"
-                    />
+                    <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Endereço</Label>
+                    <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
+                      <span className="text-sm">{personalData.endereco || "—"}</span>
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="civilStatus">Estado Civil</Label>
-                    <Select
-                      value={formData.civilStatus}
-                      onValueChange={(value) => handleChange("civilStatus", value)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="solteiro">Solteiro(a)</SelectItem>
-                        <SelectItem value="casado">Casado(a)</SelectItem>
-                        <SelectItem value="divorciado">Divorciado(a)</SelectItem>
-                        <SelectItem value="viuvo">Viúvo(a)</SelectItem>
-                        <SelectItem value="uniao-estavel">União Estável</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Estado Civil</Label>
+                    <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
+                      {personalData.estado_civil ? (
+                        <Badge variant="outline" className="font-normal">
+                          {estadoCivilLabel[personalData.estado_civil] ?? personalData.estado_civil}
+                        </Badge>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">—</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -370,60 +529,44 @@ function AnamneseForm() {
                   <Phone className="h-5 w-5" />
                   Contato de Emergência
                 </CardTitle>
-                <CardDescription>
-                  Pessoa para contato em caso de emergência
-                </CardDescription>
+                <CardDescription>Registrado no cadastro do paciente</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="emergencyName">Nome</Label>
-                    <Input
-                      id="emergencyName"
-                      value={formData.emergencyName}
-                      onChange={(e) => handleChange("emergencyName", e.target.value)}
-                      placeholder="Nome do contato"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="emergencyPhone">Telefone</Label>
-                    <Input
-                      id="emergencyPhone"
-                      value={formData.emergencyPhone}
-                      onChange={(e) => handleChange("emergencyPhone", e.target.value)}
-                      placeholder="(00) 00000-0000"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="emergencyRelation">Relação</Label>
-                    <Input
-                      id="emergencyRelation"
-                      value={formData.emergencyRelation}
-                      onChange={(e) => handleChange("emergencyRelation", e.target.value)}
-                      placeholder="Ex: Mãe, Cônjuge"
-                    />
-                  </div>
+                  {[
+                    { label: "Nome", value: personalData.contato_emergencia_nome },
+                    { label: "Telefone", value: personalData.contato_emergencia_telefone },
+                    { label: "Relação", value: personalData.contato_emergencia_relacao },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="space-y-2">
+                      <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">{label}</Label>
+                      <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
+                        <span className="text-sm">{value || "—"}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
 
+            {/* Queixa principal — editável, fica na aba de dados pessoais para fluxo natural */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
                   Queixa Principal
                 </CardTitle>
-                <CardDescription>
-                  Motivo da busca por atendimento
-                </CardDescription>
+                <CardDescription>Motivo da busca por atendimento — editável</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="mainComplaint">Motivo da Consulta</Label>
+                  <Label htmlFor="mainComplaint">
+                    Motivo da Consulta <span className="text-destructive">*</span>
+                  </Label>
                   <Textarea
                     id="mainComplaint"
-                    value={formData.mainComplaint}
-                    onChange={(e) => handleChange("mainComplaint", e.target.value)}
+                    value={clinicalData.mainComplaint}
+                    onChange={(e) => handleClinicalChange("mainComplaint", e.target.value)}
                     placeholder="Descreva o motivo principal da busca por atendimento"
                     rows={3}
                   />
@@ -433,36 +576,36 @@ function AnamneseForm() {
                     <Label htmlFor="problemDuration">Há quanto tempo?</Label>
                     <Input
                       id="problemDuration"
-                      value={formData.problemDuration}
-                      onChange={(e) => handleChange("problemDuration", e.target.value)}
+                      value={clinicalData.problemDuration}
+                      onChange={(e) => handleClinicalChange("problemDuration", e.target.value)}
                       placeholder="Ex: 6 meses, 2 anos"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Já fez terapia antes?</Label>
                     <RadioGroup
-                      value={formData.previousTherapy}
-                      onValueChange={(value) => handleChange("previousTherapy", value)}
-                      className="flex gap-4"
+                      value={clinicalData.previousTherapy}
+                      onValueChange={(value) => handleClinicalChange("previousTherapy", value)}
+                      className="flex gap-4 pt-1"
                     >
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="sim" id="therapy-yes" />
-                        <Label htmlFor="therapy-yes">Sim</Label>
+                        <Label htmlFor="therapy-yes" className="font-normal">Sim</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem value="nao" id="therapy-no" />
-                        <Label htmlFor="therapy-no">Não</Label>
+                        <Label htmlFor="therapy-no" className="font-normal">Não</Label>
                       </div>
                     </RadioGroup>
                   </div>
                 </div>
-                {formData.previousTherapy === "sim" && (
+                {clinicalData.previousTherapy === "sim" && (
                   <div className="space-y-2">
                     <Label htmlFor="previousTherapyDetails">Detalhes da terapia anterior</Label>
                     <Textarea
                       id="previousTherapyDetails"
-                      value={formData.previousTherapyDetails}
-                      onChange={(e) => handleChange("previousTherapyDetails", e.target.value)}
+                      value={clinicalData.previousTherapyDetails}
+                      onChange={(e) => handleClinicalChange("previousTherapyDetails", e.target.value)}
                       placeholder="Quando foi? Por quanto tempo? Qual abordagem?"
                       rows={2}
                     />
@@ -472,22 +615,20 @@ function AnamneseForm() {
             </Card>
           </TabsContent>
 
-          {/* Histórico */}
+          {/* ─── Histórico ─── */}
           <TabsContent value="historico" className="space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle>Histórico Pessoal</CardTitle>
-                <CardDescription>
-                  Informações médicas e psiquiátricas do paciente
-                </CardDescription>
+                <CardDescription>Informações médicas e psiquiátricas do paciente</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="physicalDiseases">Doenças Físicas</Label>
                   <Textarea
                     id="physicalDiseases"
-                    value={formData.physicalDiseases}
-                    onChange={(e) => handleChange("physicalDiseases", e.target.value)}
+                    value={clinicalData.physicalDiseases}
+                    onChange={(e) => handleClinicalChange("physicalDiseases", e.target.value)}
                     placeholder="Liste doenças físicas atuais ou passadas"
                     rows={2}
                   />
@@ -496,8 +637,8 @@ function AnamneseForm() {
                   <Label htmlFor="medications">Medicamentos em Uso</Label>
                   <Textarea
                     id="medications"
-                    value={formData.medications}
-                    onChange={(e) => handleChange("medications", e.target.value)}
+                    value={clinicalData.medications}
+                    onChange={(e) => handleClinicalChange("medications", e.target.value)}
                     placeholder="Liste medicamentos que está utilizando atualmente"
                     rows={2}
                   />
@@ -506,8 +647,8 @@ function AnamneseForm() {
                   <Label htmlFor="psychiatricHistory">Histórico Psiquiátrico</Label>
                   <Textarea
                     id="psychiatricHistory"
-                    value={formData.psychiatricHistory}
-                    onChange={(e) => handleChange("psychiatricHistory", e.target.value)}
+                    value={clinicalData.psychiatricHistory}
+                    onChange={(e) => handleClinicalChange("psychiatricHistory", e.target.value)}
                     placeholder="Internações, diagnósticos anteriores, etc."
                     rows={2}
                   />
@@ -518,17 +659,15 @@ function AnamneseForm() {
             <Card>
               <CardHeader>
                 <CardTitle>Histórico Familiar</CardTitle>
-                <CardDescription>
-                  Informações sobre a família do paciente
-                </CardDescription>
+                <CardDescription>Informações sobre a família do paciente</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="familyMentalHealth">Doenças Mentais na Família</Label>
                   <Textarea
                     id="familyMentalHealth"
-                    value={formData.familyMentalHealth}
-                    onChange={(e) => handleChange("familyMentalHealth", e.target.value)}
+                    value={clinicalData.familyMentalHealth}
+                    onChange={(e) => handleClinicalChange("familyMentalHealth", e.target.value)}
                     placeholder="Casos de depressão, ansiedade, esquizofrenia, etc. na família"
                     rows={2}
                   />
@@ -537,8 +676,8 @@ function AnamneseForm() {
                   <Label htmlFor="familyRelationship">Relação Familiar</Label>
                   <Textarea
                     id="familyRelationship"
-                    value={formData.familyRelationship}
-                    onChange={(e) => handleChange("familyRelationship", e.target.value)}
+                    value={clinicalData.familyRelationship}
+                    onChange={(e) => handleClinicalChange("familyRelationship", e.target.value)}
                     placeholder="Como é a relação com pais, irmãos, cônjuge, filhos"
                     rows={2}
                   />
@@ -547,7 +686,7 @@ function AnamneseForm() {
             </Card>
           </TabsContent>
 
-          {/* Hábitos */}
+          {/* ─── Hábitos ─── */}
           <TabsContent value="habitos" className="space-y-6">
             <Card>
               <CardHeader>
@@ -555,17 +694,15 @@ function AnamneseForm() {
                   <Heart className="h-5 w-5" />
                   Hábitos de Vida
                 </CardTitle>
-                <CardDescription>
-                  Rotina e estilo de vida do paciente
-                </CardDescription>
+                <CardDescription>Rotina e estilo de vida do paciente</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="sleepQuality">Qualidade do Sono</Label>
                     <Select
-                      value={formData.sleepQuality}
-                      onValueChange={(value) => handleChange("sleepQuality", value)}
+                      value={clinicalData.sleepQuality}
+                      onValueChange={(value) => handleClinicalChange("sleepQuality", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
@@ -582,8 +719,8 @@ function AnamneseForm() {
                   <div className="space-y-2">
                     <Label htmlFor="eatingHabits">Alimentação</Label>
                     <Select
-                      value={formData.eatingHabits}
-                      onValueChange={(value) => handleChange("eatingHabits", value)}
+                      value={clinicalData.eatingHabits}
+                      onValueChange={(value) => handleClinicalChange("eatingHabits", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
@@ -598,13 +735,12 @@ function AnamneseForm() {
                     </Select>
                   </div>
                 </div>
-
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="substanceUse">Uso de Álcool/Drogas</Label>
                     <Select
-                      value={formData.substanceUse}
-                      onValueChange={(value) => handleChange("substanceUse", value)}
+                      value={clinicalData.substanceUse}
+                      onValueChange={(value) => handleClinicalChange("substanceUse", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
@@ -621,8 +757,8 @@ function AnamneseForm() {
                   <div className="space-y-2">
                     <Label htmlFor="physicalActivity">Atividade Física</Label>
                     <Select
-                      value={formData.physicalActivity}
-                      onValueChange={(value) => handleChange("physicalActivity", value)}
+                      value={clinicalData.physicalActivity}
+                      onValueChange={(value) => handleClinicalChange("physicalActivity", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
@@ -641,7 +777,7 @@ function AnamneseForm() {
             </Card>
           </TabsContent>
 
-          {/* Aspectos Emocionais */}
+          {/* ─── Aspectos Emocionais ─── */}
           <TabsContent value="emocional" className="space-y-6">
             <Card>
               <CardHeader>
@@ -649,17 +785,15 @@ function AnamneseForm() {
                   <Brain className="h-5 w-5" />
                   Aspectos Emocionais
                 </CardTitle>
-                <CardDescription>
-                  Estado emocional atual do paciente
-                </CardDescription>
+                <CardDescription>Estado emocional atual do paciente</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="space-y-2">
                     <Label htmlFor="anxietyLevel">Nível de Ansiedade</Label>
                     <Select
-                      value={formData.anxietyLevel}
-                      onValueChange={(value) => handleChange("anxietyLevel", value)}
+                      value={clinicalData.anxietyLevel}
+                      onValueChange={(value) => handleClinicalChange("anxietyLevel", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
@@ -674,8 +808,8 @@ function AnamneseForm() {
                   <div className="space-y-2">
                     <Label htmlFor="stressLevel">Nível de Estresse</Label>
                     <Select
-                      value={formData.stressLevel}
-                      onValueChange={(value) => handleChange("stressLevel", value)}
+                      value={clinicalData.stressLevel}
+                      onValueChange={(value) => handleClinicalChange("stressLevel", value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione" />
@@ -690,24 +824,22 @@ function AnamneseForm() {
                     </Select>
                   </div>
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="moodDescription">Descrição do Humor</Label>
                   <Textarea
                     id="moodDescription"
-                    value={formData.moodDescription}
-                    onChange={(e) => handleChange("moodDescription", e.target.value)}
+                    value={clinicalData.moodDescription}
+                    onChange={(e) => handleClinicalChange("moodDescription", e.target.value)}
                     placeholder="Como está o humor do paciente? Oscilações, predominância"
                     rows={2}
                   />
                 </div>
-
                 <div className="space-y-2">
                   <Label htmlFor="recurrentThoughts">Pensamentos Recorrentes</Label>
                   <Textarea
                     id="recurrentThoughts"
-                    value={formData.recurrentThoughts}
-                    onChange={(e) => handleChange("recurrentThoughts", e.target.value)}
+                    value={clinicalData.recurrentThoughts}
+                    onChange={(e) => handleClinicalChange("recurrentThoughts", e.target.value)}
                     placeholder="Pensamentos que se repetem com frequência"
                     rows={2}
                   />
@@ -721,17 +853,15 @@ function AnamneseForm() {
                   <Target className="h-5 w-5" />
                   Objetivo da Terapia
                 </CardTitle>
-                <CardDescription>
-                  O que o paciente espera alcançar com o tratamento
-                </CardDescription>
+                <CardDescription>O que o paciente espera alcançar com o tratamento</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 <div className="space-y-2">
                   <Label htmlFor="therapyGoal">Objetivo</Label>
                   <Textarea
                     id="therapyGoal"
-                    value={formData.therapyGoal}
-                    onChange={(e) => handleChange("therapyGoal", e.target.value)}
+                    value={clinicalData.therapyGoal}
+                    onChange={(e) => handleClinicalChange("therapyGoal", e.target.value)}
                     placeholder="O que o paciente deseja alcançar com a terapia?"
                     rows={3}
                   />
@@ -745,17 +875,15 @@ function AnamneseForm() {
                   <FileText className="h-5 w-5" />
                   Observações do Psicólogo
                 </CardTitle>
-                <CardDescription>
-                  Anotações e impressões profissionais
-                </CardDescription>
+                <CardDescription>Anotações e impressões profissionais</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   <Label htmlFor="psychologistNotes">Observações</Label>
                   <Textarea
                     id="psychologistNotes"
-                    value={formData.psychologistNotes}
-                    onChange={(e) => handleChange("psychologistNotes", e.target.value)}
+                    value={clinicalData.psychologistNotes}
+                    onChange={(e) => handleClinicalChange("psychologistNotes", e.target.value)}
                     placeholder="Impressões iniciais, pontos de atenção, plano de tratamento sugerido..."
                     rows={5}
                   />
@@ -769,10 +897,38 @@ function AnamneseForm() {
   )
 }
 
+// ─────────────────────────────────────────────
+// Componente raiz que decide o fluxo
+// ─────────────────────────────────────────────
+function AnamnesePageInner() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const [selectedPatientId, setSelectedPatientId] = useState<string | null>(
+    searchParams.get("paciente")
+  )
+
+  const handleSelectPatient = (patient: Patient) => {
+    setSelectedPatientId(patient.id)
+    // Atualiza URL sem recarregar a página
+    router.replace(`/dashboard/anamnese?paciente=${patient.id}`, { scroll: false })
+  }
+
+  if (!selectedPatientId) {
+    return <PatientSelector onSelect={handleSelectPatient} />
+  }
+
+  return <AnamneseFormContent patientId={selectedPatientId} />
+}
+
 export default function AnamnesePage() {
   return (
-    <Suspense fallback={<div className="p-6">Carregando...</div>}>
-      <AnamneseForm />
+    <Suspense fallback={
+      <div className="flex items-center gap-2 p-6 text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Carregando...
+      </div>
+    }>
+      <AnamnesePageInner />
     </Suspense>
   )
 }

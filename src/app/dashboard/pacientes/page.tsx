@@ -152,15 +152,29 @@ export default function PatientsPage() {
     e.preventDefault()
 
     if (editingPatient) {
-      setPatients(
-        patients.map((p) =>
-          p.id === editingPatient.id
-            ? { ...p, nome_completo: formData.nomeCompleto, telefone: formData.telefone, email: formData.email }
-            : p
-        )
-      )
-      toast.success("Paciente atualizado com sucesso!")
-      resetForm()
+      setSubmitting(true)
+      try {
+        const res = await fetch("/api/pacientes", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: editingPatient.id,
+            ...formData,
+          }),
+        })
+        const json = await res.json()
+        if (json.success) {
+          toast.success("Paciente atualizado com sucesso!")
+          resetForm()
+          await fetchPatients()
+        } else {
+          toast.error(json.message ?? "Erro ao atualizar paciente")
+        }
+      } catch {
+        toast.error("Erro de conexão ao atualizar paciente")
+      } finally {
+        setSubmitting(false)
+      }
       return
     }
 
@@ -192,20 +206,57 @@ export default function PatientsPage() {
     setIsDialogOpen(false)
   }
 
-  const handleEdit = (patient: Patient) => {
+  const handleEdit = async (patient: Patient) => {
     setEditingPatient(patient)
     setFormData({
       ...EMPTY_FORM,
       nomeCompleto: patient.nome_completo,
-      telefone: patient.telefone,
+      telefone: formatPhone(patient.telefone),
       email: patient.email,
     })
     setIsDialogOpen(true)
+
+    try {
+      const res = await fetch(`/api/pacientes?id=${patient.id}`)
+      const json = await res.json()
+      if (json.success && json.data) {
+        const d = json.data
+        setFormData({
+          nomeCompleto: d.nome_completo ?? "",
+          dataNascimento: d.data_nascimento ? d.data_nascimento.split("T")[0] : "",
+          cpf: d.cpf ? formatCPF(d.cpf) : "",
+          telefone: d.telefone ? formatPhone(d.telefone) : "",
+          email: d.email ?? "",
+          endereco: d.endereco ?? "",
+          profissao: d.profissao ?? "",
+          estadoCivil: d.estado_civil ?? "",
+          contatoEmergenciaNome: d.contato_emergencia_nome ?? "",
+          contatoEmergenciaTelefone: d.contato_emergencia_telefone ? formatPhone(d.contato_emergencia_telefone) : "",
+          contatoEmergenciaRelacao: d.contato_emergencia_relacao ?? "",
+          motivoConsulta: "",
+          tempoQueixa: "",
+        })
+      }
+    } catch {
+      toast.error("Erro ao carregar detalhes completos do paciente.")
+    }
   }
 
-  const handleDelete = (id: string) => {
-    setPatients(patients.filter((p) => p.id !== id))
-    toast.success("Paciente excluído com sucesso!")
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/pacientes?id=${id}`, {
+        method: "DELETE",
+      })
+      const json = await res.json()
+      if (json.success) {
+        setPatients(patients.filter((p) => p.id !== id))
+        toast.success("Paciente excluído com sucesso!")
+      } else {
+        toast.error(json.message ?? "Erro ao excluir paciente")
+      }
+    } catch {
+      toast.error("Erro de conexão ao excluir paciente")
+    }
   }
 
   const getInitials = (name: string) =>
@@ -379,56 +430,54 @@ export default function PatientsPage() {
                   </div>
                 </div>
 
-                {/* Contato de Emergência */}
-                {!editingPatient && (
-                  <div className="space-y-4">
-                    <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                      Contato de Emergência
-                    </p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="contatoEmergenciaNome">Nome</Label>
-                        <Input
-                          id="contatoEmergenciaNome"
-                          value={formData.contatoEmergenciaNome}
-                          onChange={(e) =>
-                            setFormData({ ...formData, contatoEmergenciaNome: e.target.value })
-                          }
-                          placeholder="Nome do contato"
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="contatoEmergenciaTelefone">Telefone</Label>
-                        <Input
-                          id="contatoEmergenciaTelefone"
-                          value={formData.contatoEmergenciaTelefone}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              contatoEmergenciaTelefone: formatPhone(e.target.value),
-                            })
-                          }
-                          placeholder="(00) 00000-0000"
-                          maxLength={15}
-                          required
-                        />
-                      </div>
+                {/* Contato de Emergência — visível tanto no cadastro quanto na edição */}
+                <div className="space-y-4">
+                  <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+                    Contato de Emergência
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contatoEmergenciaNome">Nome</Label>
+                      <Input
+                        id="contatoEmergenciaNome"
+                        value={formData.contatoEmergenciaNome}
+                        onChange={(e) =>
+                          setFormData({ ...formData, contatoEmergenciaNome: e.target.value })
+                        }
+                        placeholder="Nome do contato"
+                        required={!editingPatient}
+                      />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="contatoEmergenciaRelacao">Relação</Label>
+                      <Label htmlFor="contatoEmergenciaTelefone">Telefone</Label>
                       <Input
-                        id="contatoEmergenciaRelacao"
-                        value={formData.contatoEmergenciaRelacao}
+                        id="contatoEmergenciaTelefone"
+                        value={formData.contatoEmergenciaTelefone}
                         onChange={(e) =>
-                          setFormData({ ...formData, contatoEmergenciaRelacao: e.target.value })
+                          setFormData({
+                            ...formData,
+                            contatoEmergenciaTelefone: formatPhone(e.target.value),
+                          })
                         }
-                        placeholder="Ex: Mãe, Cônjuge, Irmão"
-                        required
+                        placeholder="(00) 00000-0000"
+                        maxLength={15}
+                        required={!editingPatient}
                       />
                     </div>
                   </div>
-                )}
+                  <div className="space-y-2">
+                    <Label htmlFor="contatoEmergenciaRelacao">Relação</Label>
+                    <Input
+                      id="contatoEmergenciaRelacao"
+                      value={formData.contatoEmergenciaRelacao}
+                      onChange={(e) =>
+                        setFormData({ ...formData, contatoEmergenciaRelacao: e.target.value })
+                      }
+                      placeholder="Ex: Mãe, Cônjuge, Irmão"
+                      required={!editingPatient}
+                    />
+                  </div>
+                </div>
 
                 {/* Queixa Principal */}
                 {!editingPatient && (

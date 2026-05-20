@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import {
   Plus,
   Search,
@@ -9,6 +9,8 @@ import {
   Trash2,
   Package,
   AlertTriangle,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -41,6 +43,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -51,6 +54,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
 
 type StockItem = {
@@ -61,82 +65,15 @@ type StockItem = {
   minQuantity: number
   entryDate: string
   supplier: string
+  statusEstoque?: "CRÍTICO" | "NORMAL" | "INEXISTENTE"
 }
 
-const mockStockItems: StockItem[] = [
-  {
-    id: "1",
-    product: "Lenços de papel",
-    category: "Descartáveis",
-    currentQuantity: 3,
-    minQuantity: 10,
-    entryDate: "2024-05-15",
-    supplier: "Fornecedor ABC",
-  },
-  {
-    id: "2",
-    product: "Água mineral 500ml",
-    category: "Bebidas",
-    currentQuantity: 5,
-    minQuantity: 20,
-    entryDate: "2024-05-20",
-    supplier: "Distribuidora XYZ",
-  },
-  {
-    id: "3",
-    product: "Café em pó 500g",
-    category: "Bebidas",
-    currentQuantity: 2,
-    minQuantity: 5,
-    entryDate: "2024-05-25",
-    supplier: "Distribuidora XYZ",
-  },
-  {
-    id: "4",
-    product: "Papel A4 (resma)",
-    category: "Escritório",
-    currentQuantity: 15,
-    minQuantity: 10,
-    entryDate: "2024-06-01",
-    supplier: "Papelaria Central",
-  },
-  {
-    id: "5",
-    product: "Canetas esferográficas",
-    category: "Escritório",
-    currentQuantity: 25,
-    minQuantity: 20,
-    entryDate: "2024-06-01",
-    supplier: "Papelaria Central",
-  },
-  {
-    id: "6",
-    product: "Álcool em gel 500ml",
-    category: "Higiene",
-    currentQuantity: 8,
-    minQuantity: 5,
-    entryDate: "2024-06-05",
-    supplier: "Fornecedor ABC",
-  },
-  {
-    id: "7",
-    product: "Copos descartáveis 180ml",
-    category: "Descartáveis",
-    currentQuantity: 50,
-    minQuantity: 100,
-    entryDate: "2024-06-10",
-    supplier: "Fornecedor ABC",
-  },
-  {
-    id: "8",
-    product: "Chá variado (caixa)",
-    category: "Bebidas",
-    currentQuantity: 10,
-    minQuantity: 5,
-    entryDate: "2024-06-12",
-    supplier: "Distribuidora XYZ",
-  },
-]
+type CriticalItem = {
+  nome_produto: string
+  quantidade_atual: number
+  quantidade_minima: number
+  fornecedor: string
+}
 
 const categories = [
   "Descartáveis",
@@ -147,15 +84,10 @@ const categories = [
   "Outros",
 ]
 
-const suppliers = [
-  "Fornecedor ABC",
-  "Distribuidora XYZ",
-  "Papelaria Central",
-  "Atacadão Geral",
-]
-
 export default function EstoquePage() {
-  const [stockItems, setStockItems] = useState<StockItem[]>(mockStockItems)
+  const [stockItems, setStockItems] = useState<StockItem[]>([])
+  const [criticalItems, setCriticalItems] = useState<CriticalItem[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCategory, setFilterCategory] = useState<string>("all")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -168,6 +100,59 @@ export default function EstoquePage() {
     entryDate: "",
     supplier: "",
   })
+  const [isMovementDialogOpen, setIsMovementDialogOpen] = useState(false)
+  const [movingItem, setMovingItem] = useState<StockItem | null>(null)
+  const [movementForm, setMovementForm] = useState({
+    tipo: "entrada" as "entrada" | "saida",
+    quantidade: "",
+    observacao: "",
+  })
+  const [submitting, setSubmitting] = useState(false)
+
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [stockRes, criticalRes] = await Promise.all([
+        fetch("/api/estoque"),
+        fetch("/api/estoque/critico"),
+      ])
+      const [stockData, criticalData] = await Promise.all([
+        stockRes.json(),
+        criticalRes.json(),
+      ])
+
+      if (stockData.success) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setStockItems(stockData.data.map((item: any) => ({
+          id: item.id,
+          product: item.nome_produto,
+          category: item.categoria || "Outros",
+          currentQuantity: Number(item.quantidade_atual),
+          minQuantity: Number(item.quantidade_minima),
+          entryDate: item.data_entrada ? String(item.data_entrada).substring(0, 10) : "",
+          supplier: item.fornecedor || "—",
+          statusEstoque: item.status_estoque,
+        })))
+      }
+
+      if (criticalData.success) {
+        setCriticalItems(criticalData.data)
+      }
+    } catch {
+      toast.error("Erro ao carregar estoque")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
+
+  const availableCategories = useMemo(
+    () => [...new Set(stockItems.map((i) => i.category))].filter(Boolean).sort(),
+    [stockItems]
+  )
 
   const filteredItems = stockItems.filter((item) => {
     const matchesSearch =
@@ -178,47 +163,64 @@ export default function EstoquePage() {
     return matchesSearch && matchesCategory
   })
 
-  const lowStockCount = stockItems.filter(
-    (item) => item.currentQuantity < item.minQuantity
-  ).length
+  const isLowStock = (item: StockItem) =>
+    item.statusEstoque === "CRÍTICO" || item.currentQuantity < item.minQuantity
 
-  const isLowStock = (item: StockItem) => item.currentQuantity < item.minQuantity
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submitting) return
+    setSubmitting(true)
 
-    if (editingItem) {
-      setStockItems(
-        stockItems.map((item) =>
-          item.id === editingItem.id
-            ? {
-                ...item,
-                product: formData.product,
-                category: formData.category,
-                currentQuantity: Number(formData.currentQuantity),
-                minQuantity: Number(formData.minQuantity),
-                entryDate: formData.entryDate,
-                supplier: formData.supplier,
-              }
-            : item
-        )
-      )
-      toast.success("Item atualizado com sucesso!")
-    } else {
-      const newItem: StockItem = {
-        id: String(Date.now()),
-        product: formData.product,
-        category: formData.category,
-        currentQuantity: Number(formData.currentQuantity),
-        minQuantity: Number(formData.minQuantity),
-        entryDate: formData.entryDate,
-        supplier: formData.supplier,
+    try {
+      if (editingItem) {
+        const res = await fetch("/api/estoque", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: editingItem.id,
+            nomeProduto: formData.product,
+            categoria: formData.category,
+            quantidadeMinima: Number(formData.minQuantity),
+            fornecedor: formData.supplier,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok || !data.success) {
+          toast.error(data.message || "Erro ao atualizar item")
+          return
+        }
+        toast.success("Item atualizado com sucesso!")
+      } else {
+        if (!formData.product.trim()) {
+          toast.error("Informe o nome do produto")
+          return
+        }
+        const res = await fetch("/api/estoque", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nomeProduto: formData.product,
+            categoria: formData.category,
+            quantidadeAtual: Number(formData.currentQuantity) || 0,
+            quantidadeMinima: Number(formData.minQuantity) || 0,
+            fornecedor: formData.supplier,
+          }),
+        })
+        const data = await res.json()
+        if (!res.ok || !data.success) {
+          toast.error(data.message || "Erro ao cadastrar item")
+          return
+        }
+        toast.success("Item adicionado ao estoque!")
       }
-      setStockItems([newItem, ...stockItems])
-      toast.success("Item adicionado ao estoque!")
-    }
 
-    resetForm()
+      resetForm()
+      await loadData()
+    } catch {
+      toast.error("Erro ao salvar item")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const resetForm = () => {
@@ -242,14 +244,69 @@ export default function EstoquePage() {
       currentQuantity: String(item.currentQuantity),
       minQuantity: String(item.minQuantity),
       entryDate: item.entryDate,
-      supplier: item.supplier,
+      supplier: item.supplier === "—" ? "" : item.supplier,
     })
     setIsDialogOpen(true)
   }
 
-  const handleDelete = (id: string) => {
-    setStockItems(stockItems.filter((item) => item.id !== id))
-    toast.success("Item removido do estoque!")
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/estoque?id=${id}`, { method: "DELETE" })
+      const data = await res.json()
+      if (!res.ok || !data.success) {
+        toast.error(data.message || "Erro ao remover item")
+        return
+      }
+      toast.success("Item removido do estoque!")
+      await loadData()
+    } catch {
+      toast.error("Erro ao remover item")
+    }
+  }
+
+  const handleMovement = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!movingItem || submitting) return
+
+    const quantidade = Number(movementForm.quantidade)
+    if (!quantidade || !Number.isInteger(quantidade) || quantidade <= 0) {
+      toast.error("Informe uma quantidade válida (número inteiro positivo)")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/estoque/movimentar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          itemId: movingItem.id,
+          tipo: movementForm.tipo,
+          quantidade,
+          observacao: movementForm.observacao || null,
+        }),
+      })
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        toast.error(data.message || "Erro ao registrar movimentação")
+        return
+      }
+
+      toast.success(
+        movementForm.tipo === "entrada"
+          ? "Entrada registrada com sucesso!"
+          : "Saída registrada com sucesso!"
+      )
+      setIsMovementDialogOpen(false)
+      setMovingItem(null)
+      setMovementForm({ tipo: "entrada", quantidade: "", observacao: "" })
+      await loadData()
+    } catch {
+      toast.error("Erro ao registrar movimentação")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -316,28 +373,24 @@ export default function EstoquePage() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="supplier">Fornecedor</Label>
-                    <Select
+                    <Input
+                      id="supplier"
                       value={formData.supplier}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, supplier: value })
+                      onChange={(e) =>
+                        setFormData({ ...formData, supplier: e.target.value })
                       }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {suppliers.map((sup) => (
-                          <SelectItem key={sup} value={sup}>
-                            {sup}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Nome do fornecedor"
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="currentQuantity">Quantidade Atual</Label>
+                    <Label htmlFor="currentQuantity">
+                      Quantidade Atual
+                      {editingItem && (
+                        <span className="ml-1 text-xs text-muted-foreground">(use Movimentar)</span>
+                      )}
+                    </Label>
                     <Input
                       id="currentQuantity"
                       type="number"
@@ -347,7 +400,8 @@ export default function EstoquePage() {
                         setFormData({ ...formData, currentQuantity: e.target.value })
                       }
                       placeholder="0"
-                      required
+                      disabled={!!editingItem}
+                      required={!editingItem}
                     />
                   </div>
                   <div className="space-y-2">
@@ -374,7 +428,7 @@ export default function EstoquePage() {
                     onChange={(e) =>
                       setFormData({ ...formData, entryDate: e.target.value })
                     }
-                    required
+                    disabled={!!editingItem}
                   />
                 </div>
               </div>
@@ -382,7 +436,7 @@ export default function EstoquePage() {
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={submitting}>
                   {editingItem ? "Salvar Alterações" : "Adicionar"}
                 </Button>
               </DialogFooter>
@@ -390,6 +444,31 @@ export default function EstoquePage() {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Critical stock alert */}
+      {criticalItems.length > 0 && (
+        <Card className="border-destructive/40 bg-destructive/5">
+          <CardHeader className="pb-2 pt-4">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <CardTitle className="text-sm font-semibold text-destructive">
+                {criticalItems.length}{" "}
+                {criticalItems.length === 1 ? "item com estoque" : "itens com estoque"} abaixo do
+                mínimo
+              </CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pb-4">
+            <div className="flex flex-wrap gap-2">
+              {criticalItems.map((item, i) => (
+                <Badge key={i} variant="destructive" className="text-xs font-normal">
+                  {item.nome_produto} — {Number(item.quantidade_atual)}/{Number(item.quantidade_minima)}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -401,10 +480,10 @@ export default function EstoquePage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stockItems.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Produtos cadastrados
-            </p>
+            <div className="text-2xl font-bold">
+              {loading ? "—" : stockItems.length}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Produtos cadastrados</p>
           </CardContent>
         </Card>
 
@@ -416,10 +495,10 @@ export default function EstoquePage() {
             <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-destructive">{lowStockCount}</div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Itens abaixo do mínimo
-            </p>
+            <div className="text-2xl font-bold text-destructive">
+              {loading ? "—" : criticalItems.length}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Itens abaixo do mínimo</p>
           </CardContent>
         </Card>
 
@@ -432,11 +511,9 @@ export default function EstoquePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Set(stockItems.map((i) => i.category)).size}
+              {loading ? "—" : new Set(stockItems.map((i) => i.category)).size}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Categorias diferentes
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">Categorias diferentes</p>
           </CardContent>
         </Card>
       </div>
@@ -444,9 +521,7 @@ export default function EstoquePage() {
       <Card>
         <CardHeader>
           <CardTitle>Lista de Produtos</CardTitle>
-          <CardDescription>
-            {filteredItems.length} produto(s) no estoque
-          </CardDescription>
+          <CardDescription>{filteredItems.length} produto(s) no estoque</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-4 mb-4 sm:flex-row">
@@ -465,7 +540,7 @@ export default function EstoquePage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas Categorias</SelectItem>
-                {categories.map((cat) => (
+                {availableCategories.map((cat) => (
                   <SelectItem key={cat} value={cat}>
                     {cat}
                   </SelectItem>
@@ -491,7 +566,7 @@ export default function EstoquePage() {
                 {filteredItems.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={7} className="h-24 text-center">
-                      Nenhum item encontrado.
+                      {loading ? "Carregando..." : "Nenhum item encontrado."}
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -503,7 +578,7 @@ export default function EstoquePage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {isLowStock(item) && (
-                            <AlertTriangle className="h-4 w-4 text-destructive" />
+                            <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
                           )}
                           <span className="font-medium">{item.product}</span>
                         </div>
@@ -526,7 +601,9 @@ export default function EstoquePage() {
                         {item.minQuantity}
                       </TableCell>
                       <TableCell className="hidden lg:table-cell text-muted-foreground">
-                        {new Date(item.entryDate).toLocaleDateString("pt-BR")}
+                        {item.entryDate
+                          ? new Date(item.entryDate).toLocaleDateString("pt-BR")
+                          : "—"}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground">
                         {item.supplier}
@@ -540,6 +617,27 @@ export default function EstoquePage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setMovingItem(item)
+                                setMovementForm({ tipo: "entrada", quantidade: "", observacao: "" })
+                                setIsMovementDialogOpen(true)
+                              }}
+                            >
+                              <ArrowUp className="mr-2 h-4 w-4 text-accent" />
+                              Entrada
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                setMovingItem(item)
+                                setMovementForm({ tipo: "saida", quantidade: "", observacao: "" })
+                                setIsMovementDialogOpen(true)
+                              }}
+                            >
+                              <ArrowDown className="mr-2 h-4 w-4 text-destructive" />
+                              Saída
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleEdit(item)}>
                               <Pencil className="mr-2 h-4 w-4" />
                               Editar
@@ -562,6 +660,84 @@ export default function EstoquePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Movement Dialog */}
+      <Dialog open={isMovementDialogOpen} onOpenChange={setIsMovementDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Registrar Movimentação</DialogTitle>
+            <DialogDescription>
+              {movingItem?.product}
+              {movingItem && (
+                <span className="ml-2 text-muted-foreground">
+                  — Qtd. atual: <strong>{movingItem.currentQuantity}</strong>
+                </span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleMovement}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select
+                  value={movementForm.tipo}
+                  onValueChange={(value: "entrada" | "saida") =>
+                    setMovementForm({ ...movementForm, tipo: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="entrada">Entrada</SelectItem>
+                    <SelectItem value="saida">Saída</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Quantidade</Label>
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={movementForm.quantidade}
+                  onChange={(e) =>
+                    setMovementForm({ ...movementForm, quantidade: e.target.value })
+                  }
+                  placeholder="0"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Observação</Label>
+                <Textarea
+                  value={movementForm.observacao}
+                  onChange={(e) =>
+                    setMovementForm({ ...movementForm, observacao: e.target.value })
+                  }
+                  placeholder="Observação (opcional)"
+                  rows={2}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setIsMovementDialogOpen(false)
+                  setMovingItem(null)
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={submitting}>
+                Confirmar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

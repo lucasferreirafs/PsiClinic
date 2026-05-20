@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import {
   Plus,
   TrendingUp,
@@ -12,6 +12,7 @@ import {
   Trash2,
   ArrowUpRight,
   ArrowDownRight,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -87,51 +88,33 @@ type Expense = {
   amount: number
 }
 
-const mockRevenues: Revenue[] = [
-  { id: "1", date: "2024-06-01", patient: "Ana Carolina Silva", service: "Consulta Individual", paymentMethod: "PIX", amount: 200, status: "pago" },
-  { id: "2", date: "2024-06-02", patient: "João Pedro Santos", service: "Consulta Individual", paymentMethod: "Cartão", amount: 200, status: "pago" },
-  { id: "3", date: "2024-06-03", patient: "Maria Fernanda Lima", service: "Terapia de Casal", paymentMethod: "PIX", amount: 350, status: "pago" },
-  { id: "4", date: "2024-06-05", patient: "Lucas Oliveira", service: "Consulta Individual", paymentMethod: "Dinheiro", amount: 200, status: "pendente" },
-  { id: "5", date: "2024-06-07", patient: "Beatriz Costa", service: "Avaliação Psicológica", paymentMethod: "PIX", amount: 500, status: "pago" },
-  { id: "6", date: "2024-06-10", patient: "Rafael Mendes", service: "Consulta Individual", paymentMethod: "Cartão", amount: 200, status: "pago" },
-  { id: "7", date: "2024-06-12", patient: "Camila Rodrigues", service: "Consulta Individual", paymentMethod: "PIX", amount: 200, status: "cancelado" },
-]
+type Patient = {
+  id: string
+  nome_completo: string
+}
 
-const mockExpenses: Expense[] = [
-  { id: "1", date: "2024-06-01", description: "Aluguel", category: "Infraestrutura", amount: 2500 },
-  { id: "2", date: "2024-06-01", description: "Internet e Telefone", category: "Infraestrutura", amount: 250 },
-  { id: "3", date: "2024-06-05", description: "Material de Escritório", category: "Materiais", amount: 150 },
-  { id: "4", date: "2024-06-10", description: "Café e Água", category: "Suprimentos", amount: 180 },
-  { id: "5", date: "2024-06-15", description: "Limpeza", category: "Serviços", amount: 400 },
-  { id: "6", date: "2024-06-20", description: "Software de Gestão", category: "Tecnologia", amount: 99 },
-]
+type ChartData = {
+  month: string
+  receitas: number
+  despesas: number
+}
 
-const monthlyData = [
-  { month: "Jan", receitas: 12500, despesas: 4200 },
-  { month: "Fev", receitas: 14200, despesas: 4800 },
-  { month: "Mar", receitas: 15800, despesas: 5100 },
-  { month: "Abr", receitas: 13900, despesas: 4500 },
-  { month: "Mai", receitas: 16500, despesas: 5200 },
-  { month: "Jun", receitas: 18200, despesas: 5500 },
-]
+type SummaryCards = {
+  totalReceitas: number
+  totalDespesas: number
+  lucroLiquido: number
+}
 
-const expenseCategories = [
-  { name: "Infraestrutura", value: 2750, color: "oklch(0.55 0.15 220)" },
-  { name: "Materiais", value: 150, color: "oklch(0.75 0.12 160)" },
-  { name: "Suprimentos", value: 180, color: "oklch(0.65 0.15 280)" },
-  { name: "Serviços", value: 400, color: "oklch(0.75 0.15 85)" },
-  { name: "Tecnologia", value: 99, color: "oklch(0.6 0.2 25)" },
-]
+const CATEGORY_COLORS: Record<string, string> = {
+  Infraestrutura: "oklch(0.55 0.15 220)",
+  Materiais: "oklch(0.75 0.12 160)",
+  Suprimentos: "oklch(0.65 0.15 280)",
+  Serviços: "oklch(0.75 0.15 85)",
+  Tecnologia: "oklch(0.6 0.2 25)",
+  Outros: "oklch(0.5 0.1 60)",
+}
 
-const patients = [
-  "Ana Carolina Silva",
-  "João Pedro Santos",
-  "Maria Fernanda Lima",
-  "Lucas Oliveira",
-  "Beatriz Costa",
-  "Rafael Mendes",
-  "Camila Rodrigues",
-]
+const COLOR_PALETTE = Object.values(CATEGORY_COLORS)
 
 const services = [
   "Consulta Individual",
@@ -143,11 +126,26 @@ const services = [
 
 const paymentMethods = ["PIX", "Cartão", "Dinheiro", "Boleto"]
 
-const expenseCategoriesList = ["Infraestrutura", "Materiais", "Suprimentos", "Serviços", "Tecnologia", "Outros"]
+const expenseCategoriesList = [
+  "Infraestrutura",
+  "Materiais",
+  "Suprimentos",
+  "Serviços",
+  "Tecnologia",
+  "Outros",
+]
 
 export default function FinanceiroPage() {
-  const [revenues, setRevenues] = useState<Revenue[]>(mockRevenues)
-  const [expenses, setExpenses] = useState<Expense[]>(mockExpenses)
+  const [revenues, setRevenues] = useState<Revenue[]>([])
+  const [expenses, setExpenses] = useState<Expense[]>([])
+  const [patients, setPatients] = useState<Patient[]>([])
+  const [chartData, setChartData] = useState<ChartData[]>([])
+  const [summaryCards, setSummaryCards] = useState<SummaryCards>({
+    totalReceitas: 0,
+    totalDespesas: 0,
+    lucroLiquido: 0,
+  })
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [isRevenueDialogOpen, setIsRevenueDialogOpen] = useState(false)
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false)
@@ -165,15 +163,78 @@ export default function FinanceiroPage() {
     category: "",
     amount: "",
   })
+  const [submitting, setSubmitting] = useState(false)
 
-  const totals = useMemo(() => {
-    const totalReceitas = revenues
-      .filter((r) => r.status === "pago")
-      .reduce((sum, r) => sum + r.amount, 0)
-    const totalDespesas = expenses.reduce((sum, e) => sum + e.amount, 0)
-    const lucroLiquido = totalReceitas - totalDespesas
-    return { totalReceitas, totalDespesas, lucroLiquido }
-  }, [revenues, expenses])
+  const loadData = useCallback(async () => {
+    setLoading(true)
+    try {
+      const [revenuesRes, expensesRes, resumoRes, patientsRes] = await Promise.all([
+        fetch("/api/financeiro/receita"),
+        fetch("/api/financeiro/despesa"),
+        fetch("/api/financeiro/resumo"),
+        fetch("/api/pacientes"),
+      ])
+
+      const [revenuesData, expensesData, resumoData, patientsData] = await Promise.all([
+        revenuesRes.json(),
+        expensesRes.json(),
+        resumoRes.json(),
+        patientsRes.json(),
+      ])
+
+      if (revenuesData.success) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setRevenues(revenuesData.data.map((r: any) => ({
+          id: r.id,
+          date: r.data_receita,
+          patient: r.paciente || "—",
+          service: r.servico,
+          paymentMethod: r.forma_pagamento || "—",
+          amount: Number(r.valor),
+          status: r.status as Revenue["status"],
+        })))
+      }
+
+      if (expensesData.success) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        setExpenses(expensesData.data.map((e: any) => ({
+          id: e.id,
+          date: e.data_despesa,
+          description: e.descricao,
+          category: e.categoria || "Outros",
+          amount: Number(e.valor),
+        })))
+      }
+
+      if (resumoData.success) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const rows: any[] = resumoData.data
+
+        setChartData(rows.map((r) => ({
+          month: `${String(r.mes).padStart(2, "0")}/${r.ano}`,
+          receitas: Number(r.total_receitas),
+          despesas: Number(r.total_despesas),
+        })))
+
+        const totalReceitas = rows.reduce((sum, r) => sum + Number(r.total_receitas), 0)
+        const totalDespesas = rows.reduce((sum, r) => sum + Number(r.total_despesas), 0)
+        const lucroLiquido = rows.reduce((sum, r) => sum + Number(r.lucro_liquido), 0)
+        setSummaryCards({ totalReceitas, totalDespesas, lucroLiquido })
+      }
+
+      if (patientsData.success) {
+        setPatients(patientsData.data)
+      }
+    } catch {
+      toast.error("Erro ao carregar dados financeiros")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const filteredRevenues = revenues.filter(
     (r) =>
@@ -187,55 +248,130 @@ export default function FinanceiroPage() {
       e.category.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value)
+  const expenseCategories = useMemo(() => {
+    const grouped: Record<string, number> = {}
+    expenses.forEach((e) => {
+      const cat = e.category || "Outros"
+      grouped[cat] = (grouped[cat] || 0) + e.amount
+    })
+    return Object.entries(grouped).map(([name, value], i) => ({
+      name,
+      value,
+      color: CATEGORY_COLORS[name] ?? COLOR_PALETTE[i % COLOR_PALETTE.length],
+    }))
+  }, [expenses])
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+
+  const handleAddRevenue = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (submitting) return
+
+    if (!revenueForm.patient) {
+      toast.error("Selecione um paciente")
+      return
+    }
+    if (!revenueForm.service) {
+      toast.error("Selecione um serviço")
+      return
+    }
+    if (!revenueForm.amount || Number(revenueForm.amount) < 0) {
+      toast.error("Informe um valor válido")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/financeiro/receita", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pacienteId: revenueForm.patient,
+          servico: revenueForm.service,
+          formaPagamento: revenueForm.paymentMethod || null,
+          valor: Number(revenueForm.amount),
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        toast.error(data.message || "Erro ao registrar receita")
+        setSubmitting(false)
+        return
+      }
+
+      if (revenueForm.status !== "pendente" && data.id) {
+        await fetch("/api/financeiro/receita/status", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ receitaId: data.id, status: revenueForm.status }),
+        })
+      }
+
+      toast.success("Receita adicionada com sucesso!")
+      setRevenueForm({
+        date: "",
+        patient: "",
+        service: "",
+        paymentMethod: "",
+        amount: "",
+        status: "pendente",
+      })
+      setIsRevenueDialogOpen(false)
+      await loadData()
+    } catch {
+      toast.error("Erro ao registrar receita")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  const handleAddRevenue = (e: React.FormEvent) => {
+  const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault()
-    const newRevenue: Revenue = {
-      id: String(Date.now()),
-      date: revenueForm.date,
-      patient: revenueForm.patient,
-      service: revenueForm.service,
-      paymentMethod: revenueForm.paymentMethod,
-      amount: Number(revenueForm.amount),
-      status: revenueForm.status,
-    }
-    setRevenues([newRevenue, ...revenues])
-    toast.success("Receita adicionada com sucesso!")
-    setRevenueForm({
-      date: "",
-      patient: "",
-      service: "",
-      paymentMethod: "",
-      amount: "",
-      status: "pendente",
-    })
-    setIsRevenueDialogOpen(false)
-  }
 
-  const handleAddExpense = (e: React.FormEvent) => {
-    e.preventDefault()
-    const newExpense: Expense = {
-      id: String(Date.now()),
-      date: expenseForm.date,
-      description: expenseForm.description,
-      category: expenseForm.category,
-      amount: Number(expenseForm.amount),
+    if (submitting) return
+
+    if (!expenseForm.description.trim()) {
+      toast.error("Informe a descrição da despesa")
+      return
     }
-    setExpenses([newExpense, ...expenses])
-    toast.success("Despesa adicionada com sucesso!")
-    setExpenseForm({
-      date: "",
-      description: "",
-      category: "",
-      amount: "",
-    })
-    setIsExpenseDialogOpen(false)
+    if (!expenseForm.amount || Number(expenseForm.amount) < 0) {
+      toast.error("Informe um valor válido")
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/financeiro/despesa", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          descricao: expenseForm.description,
+          categoria: expenseForm.category || null,
+          valor: Number(expenseForm.amount),
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok || !data.success) {
+        toast.error(data.message || "Erro ao registrar despesa")
+        setSubmitting(false)
+        return
+      }
+
+      toast.success("Despesa adicionada com sucesso!")
+      setExpenseForm({ date: "", description: "", category: "", amount: "" })
+      setIsExpenseDialogOpen(false)
+      await loadData()
+    } catch {
+      toast.error("Erro ao registrar despesa")
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const handleDeleteRevenue = (id: string) => {
@@ -286,11 +422,11 @@ export default function FinanceiroPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-accent">
-              {formatCurrency(totals.totalReceitas)}
+              {loading ? "—" : formatCurrency(summaryCards.totalReceitas)}
             </div>
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
               <ArrowUpRight className="h-3 w-3 text-accent" />
-              <span className="text-accent">+10.3%</span> vs mês anterior
+              <span className="text-accent">Acumulado geral</span>
             </p>
           </CardContent>
         </Card>
@@ -304,11 +440,11 @@ export default function FinanceiroPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {formatCurrency(totals.totalDespesas)}
+              {loading ? "—" : formatCurrency(summaryCards.totalDespesas)}
             </div>
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
               <ArrowDownRight className="h-3 w-3 text-destructive" />
-              <span className="text-destructive">+5.8%</span> vs mês anterior
+              <span className="text-destructive">Acumulado geral</span>
             </p>
           </CardContent>
         </Card>
@@ -321,12 +457,14 @@ export default function FinanceiroPage() {
             <DollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${totals.lucroLiquido >= 0 ? "text-accent" : "text-destructive"}`}>
-              {formatCurrency(totals.lucroLiquido)}
+            <div
+              className={`text-2xl font-bold ${
+                summaryCards.lucroLiquido >= 0 ? "text-accent" : "text-destructive"
+              }`}
+            >
+              {loading ? "—" : formatCurrency(summaryCards.lucroLiquido)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Receitas - Despesas
-            </p>
+            <p className="text-xs text-muted-foreground mt-1">Receitas - Despesas</p>
           </CardContent>
         </Card>
       </div>
@@ -336,12 +474,12 @@ export default function FinanceiroPage() {
         <Card>
           <CardHeader>
             <CardTitle>Evolução Mensal</CardTitle>
-            <CardDescription>Receitas e despesas dos últimos 6 meses</CardDescription>
+            <CardDescription>Receitas e despesas por mês</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-62.5">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={monthlyData}>
+                <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="oklch(0.55 0.15 220)" stopOpacity={0.3} />
@@ -353,8 +491,8 @@ export default function FinanceiroPage() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                  <XAxis dataKey="month" tick={{ fill: 'currentColor' }} className="text-xs" />
-                  <YAxis tick={{ fill: 'currentColor' }} className="text-xs" />
+                  <XAxis dataKey="month" tick={{ fill: "currentColor" }} className="text-xs" />
+                  <YAxis tick={{ fill: "currentColor" }} className="text-xs" />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "oklch(1 0 0)",
@@ -388,7 +526,7 @@ export default function FinanceiroPage() {
         <Card>
           <CardHeader>
             <CardTitle>Despesas por Categoria</CardTitle>
-            <CardDescription>Distribuição das despesas do mês</CardDescription>
+            <CardDescription>Distribuição das despesas registradas</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-62.5">
@@ -414,7 +552,10 @@ export default function FinanceiroPage() {
             <div className="flex flex-wrap justify-center gap-4 mt-4">
               {expenseCategories.map((cat, i) => (
                 <div key={i} className="flex items-center gap-2 text-sm">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: cat.color }} />
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: cat.color }}
+                  />
                   <span className="text-muted-foreground">{cat.name}</span>
                 </div>
               ))}
@@ -442,9 +583,7 @@ export default function FinanceiroPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Receitas</CardTitle>
-                  <CardDescription>
-                    {revenues.length} registro(s) de receita
-                  </CardDescription>
+                  <CardDescription>{revenues.length} registro(s) de receita</CardDescription>
                 </div>
                 <Dialog open={isRevenueDialogOpen} onOpenChange={setIsRevenueDialogOpen}>
                   <DialogTrigger asChild>
@@ -468,8 +607,9 @@ export default function FinanceiroPage() {
                             <Input
                               type="date"
                               value={revenueForm.date}
-                              onChange={(e) => setRevenueForm({ ...revenueForm, date: e.target.value })}
-                              required
+                              onChange={(e) =>
+                                setRevenueForm({ ...revenueForm, date: e.target.value })
+                              }
                             />
                           </div>
                           <div className="space-y-2">
@@ -477,7 +617,9 @@ export default function FinanceiroPage() {
                             <Input
                               type="number"
                               value={revenueForm.amount}
-                              onChange={(e) => setRevenueForm({ ...revenueForm, amount: e.target.value })}
+                              onChange={(e) =>
+                                setRevenueForm({ ...revenueForm, amount: e.target.value })
+                              }
                               placeholder="0.00"
                               required
                             />
@@ -487,14 +629,18 @@ export default function FinanceiroPage() {
                           <Label>Paciente</Label>
                           <Select
                             value={revenueForm.patient}
-                            onValueChange={(value) => setRevenueForm({ ...revenueForm, patient: value })}
+                            onValueChange={(value) =>
+                              setRevenueForm({ ...revenueForm, patient: value })
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
                             <SelectContent>
                               {patients.map((p) => (
-                                <SelectItem key={p} value={p}>{p}</SelectItem>
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.nome_completo}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -503,14 +649,18 @@ export default function FinanceiroPage() {
                           <Label>Serviço</Label>
                           <Select
                             value={revenueForm.service}
-                            onValueChange={(value) => setRevenueForm({ ...revenueForm, service: value })}
+                            onValueChange={(value) =>
+                              setRevenueForm({ ...revenueForm, service: value })
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
                             <SelectContent>
                               {services.map((s) => (
-                                <SelectItem key={s} value={s}>{s}</SelectItem>
+                                <SelectItem key={s} value={s}>
+                                  {s}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
@@ -520,14 +670,18 @@ export default function FinanceiroPage() {
                             <Label>Forma de Pagamento</Label>
                             <Select
                               value={revenueForm.paymentMethod}
-                              onValueChange={(value) => setRevenueForm({ ...revenueForm, paymentMethod: value })}
+                              onValueChange={(value) =>
+                                setRevenueForm({ ...revenueForm, paymentMethod: value })
+                              }
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Selecione" />
                               </SelectTrigger>
                               <SelectContent>
                                 {paymentMethods.map((m) => (
-                                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                                  <SelectItem key={m} value={m}>
+                                    {m}
+                                  </SelectItem>
                                 ))}
                               </SelectContent>
                             </Select>
@@ -536,7 +690,9 @@ export default function FinanceiroPage() {
                             <Label>Status</Label>
                             <Select
                               value={revenueForm.status}
-                              onValueChange={(value: Revenue["status"]) => setRevenueForm({ ...revenueForm, status: value })}
+                              onValueChange={(value: Revenue["status"]) =>
+                                setRevenueForm({ ...revenueForm, status: value })
+                              }
                             >
                               <SelectTrigger>
                                 <SelectValue />
@@ -551,10 +707,18 @@ export default function FinanceiroPage() {
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setIsRevenueDialogOpen(false)}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setIsRevenueDialogOpen(false)}
+                          disabled={submitting}
+                        >
                           Cancelar
                         </Button>
-                        <Button type="submit">Adicionar</Button>
+                        <Button type="submit" disabled={submitting}>
+                          {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Adicionar
+                        </Button>
                       </DialogFooter>
                     </form>
                   </DialogContent>
@@ -591,7 +755,7 @@ export default function FinanceiroPage() {
                     {filteredRevenues.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="h-24 text-center">
-                          Nenhuma receita encontrada.
+                          {loading ? "Carregando..." : "Nenhuma receita encontrada."}
                         </TableCell>
                       </TableRow>
                     ) : (
@@ -649,9 +813,7 @@ export default function FinanceiroPage() {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle>Despesas</CardTitle>
-                  <CardDescription>
-                    {expenses.length} registro(s) de despesa
-                  </CardDescription>
+                  <CardDescription>{expenses.length} registro(s) de despesa</CardDescription>
                 </div>
                 <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
                   <DialogTrigger asChild>
@@ -675,8 +837,9 @@ export default function FinanceiroPage() {
                             <Input
                               type="date"
                               value={expenseForm.date}
-                              onChange={(e) => setExpenseForm({ ...expenseForm, date: e.target.value })}
-                              required
+                              onChange={(e) =>
+                                setExpenseForm({ ...expenseForm, date: e.target.value })
+                              }
                             />
                           </div>
                           <div className="space-y-2">
@@ -684,7 +847,9 @@ export default function FinanceiroPage() {
                             <Input
                               type="number"
                               value={expenseForm.amount}
-                              onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
+                              onChange={(e) =>
+                                setExpenseForm({ ...expenseForm, amount: e.target.value })
+                              }
                               placeholder="0.00"
                               required
                             />
@@ -694,7 +859,9 @@ export default function FinanceiroPage() {
                           <Label>Descrição</Label>
                           <Input
                             value={expenseForm.description}
-                            onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
+                            onChange={(e) =>
+                              setExpenseForm({ ...expenseForm, description: e.target.value })
+                            }
                             placeholder="Descrição da despesa"
                             required
                           />
@@ -703,24 +870,36 @@ export default function FinanceiroPage() {
                           <Label>Categoria</Label>
                           <Select
                             value={expenseForm.category}
-                            onValueChange={(value) => setExpenseForm({ ...expenseForm, category: value })}
+                            onValueChange={(value) =>
+                              setExpenseForm({ ...expenseForm, category: value })
+                            }
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="Selecione" />
                             </SelectTrigger>
                             <SelectContent>
                               {expenseCategoriesList.map((c) => (
-                                <SelectItem key={c} value={c}>{c}</SelectItem>
+                                <SelectItem key={c} value={c}>
+                                  {c}
+                                </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
                       <DialogFooter>
-                        <Button type="button" variant="outline" onClick={() => setIsExpenseDialogOpen(false)}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setIsExpenseDialogOpen(false)}
+                          disabled={submitting}
+                        >
                           Cancelar
                         </Button>
-                        <Button type="submit">Adicionar</Button>
+                        <Button type="submit" disabled={submitting}>
+                          {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                          Adicionar
+                        </Button>
                       </DialogFooter>
                     </form>
                   </DialogContent>
@@ -743,7 +922,7 @@ export default function FinanceiroPage() {
                     {filteredExpenses.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center">
-                          Nenhuma despesa encontrada.
+                          {loading ? "Carregando..." : "Nenhuma despesa encontrada."}
                         </TableCell>
                       </TableRow>
                     ) : (

@@ -97,30 +97,8 @@ export async function PUT(request: Request) {
     const fezTerapia =
       previousTherapy === "sim" ? true : previousTherapy === "nao" ? false : null;
 
-    // Atualiza os campos clínicos diretamente na tabela anamneses
-    // Os dados pessoais (nome, CPF, telefone, etc.) ficam na tabela pacientes e não são editados aqui
     await pool.query(
-      `UPDATE anamneses SET
-        motivo_consulta           = COALESCE($2, motivo_consulta),
-        tempo_queixa              = $3,
-        fez_terapia_antes         = $4,
-        tempo_terapia_anterior    = $5,
-        doencas_fisicas           = $6,
-        uso_medicamentos          = $7,
-        historico_psiquiatrico    = $8,
-        doencas_mentais_familia   = $9,
-        relacao_familiar_desc     = $10,
-        habitos_sono              = $11,
-        habitos_alimentacao       = $12,
-        uso_substancias           = $13,
-        atividade_fisica          = $14,
-        ansiedade                 = $15::nivel_ansiedade,
-        humor                     = $16,
-        estresse                  = $17,
-        pensamentos_recorrentes   = $18,
-        objetivo_terapia          = $19,
-        observacoes_psicologo     = $20
-      WHERE id = $1 AND ativo = TRUE`,
+      `CALL sp_atualizar_anamnese_completa($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15::nivel_ansiedade, $16, $17, $18, $19, $20)`,
       [
         anamneseId,
         mainComplaint || null,

@@ -144,46 +144,23 @@ export async function PUT(request: Request) {
       );
     }
 
-    const client = await pool.connect();
-    try {
-      await client.query("BEGIN");
-      
-      await client.query(
-        `UPDATE pacientes 
-         SET nome_completo = $1, data_nascimento = $2, cpf = $3, telefone = $4, 
-             email = $5, endereco = $6, profissao = $7, estado_civil = $8,
-             atualizado_em = CURRENT_TIMESTAMP
-         WHERE id = $9`,
-        [nomeCompleto, dataNascimento, cpf, telefone, email, endereco || null, profissao || null, estadoCivil || null, id]
-      );
-
-      const contactCheck = await client.query(
-        `SELECT id FROM contatos_emergencia WHERE paciente_id = $1 AND ativo = TRUE`,
-        [id]
-      );
-
-      if (contactCheck.rows.length > 0) {
-        await client.query(
-          `UPDATE contatos_emergencia 
-           SET nome = $1, telefone = $2, relacao = $3, atualizado_em = CURRENT_TIMESTAMP
-           WHERE paciente_id = $4 AND ativo = TRUE`,
-          [contatoEmergenciaNome, contatoEmergenciaTelefone, contatoEmergenciaRelacao, id]
-        );
-      } else {
-        await client.query(
-          `INSERT INTO contatos_emergencia (paciente_id, nome, telefone, relacao)
-           VALUES ($1, $2, $3, $4)`,
-          [id, contatoEmergenciaNome, contatoEmergenciaTelefone, contatoEmergenciaRelacao]
-        );
-      }
-
-      await client.query("COMMIT");
-    } catch (e) {
-      await client.query("ROLLBACK");
-      throw e;
-    } finally {
-      client.release();
-    }
+    await pool.query(
+      `CALL sp_atualizar_paciente_completo($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      [
+        id,
+        nomeCompleto,
+        dataNascimento,
+        cpf,
+        telefone,
+        email,
+        endereco || null,
+        profissao || null,
+        estadoCivil || null,
+        contatoEmergenciaNome || null,
+        contatoEmergenciaTelefone || null,
+        contatoEmergenciaRelacao || null,
+      ]
+    );
 
     return NextResponse.json({
       success: true,

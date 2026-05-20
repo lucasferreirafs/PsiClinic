@@ -44,6 +44,7 @@ import {
   PieChart,
   Pie,
   Cell,
+  Legend,
 } from "recharts"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -54,6 +55,16 @@ type FinancialItem = {
   totalReceitas: number
   totalDespesas: number
   lucroLiquido: number
+}
+
+type TransactionItem = {
+  tipo: "receita" | "despesa"
+  id: number
+  data: string
+  descricao: string
+  categoriaInfo: string | null
+  valor: number
+  paciente: string | null
 }
 
 type PatientStats = {
@@ -115,6 +126,7 @@ export default function RelatoriosPage() {
 
   // Financial
   const [financialItems, setFinancialItems] = useState<FinancialItem[]>([])
+  const [transactions, setTransactions] = useState<TransactionItem[]>([])
 
   // Patients
   const [patientStats, setPatientStats] = useState<PatientStats>({
@@ -141,7 +153,7 @@ export default function RelatoriosPage() {
 
     try {
       const [finRes, pacRes, agRes, estRes] = await Promise.all([
-        fetch("/api/relatorios/financeiro"),
+        fetch(`/api/relatorios/financeiro${qs}`),
         fetch("/api/relatorios/pacientes"),
         fetch(`/api/relatorios/agenda${qs}`),
         fetch("/api/relatorios/estoque"),
@@ -153,7 +165,10 @@ export default function RelatoriosPage() {
         estRes.json(),
       ])
 
-      if (finData.success) setFinancialItems(finData.data)
+      if (finData.success) {
+        setFinancialItems(finData.data.mensal)
+        setTransactions(finData.data.transacoes)
+      }
       if (pacData.success) {
         setPatientStats(pacData.data.estatisticas)
         setPatientMensais(pacData.data.mensais)
@@ -426,7 +441,7 @@ export default function RelatoriosPage() {
 
         {/* ── Financial Report ── */}
         <TabsContent value="financeiro" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3 print:grid print:grid-cols-3 print:gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -493,8 +508,8 @@ export default function RelatoriosPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="month" tick={{ fill: "#374151", fontSize: 11 }} />
                   <YAxis tick={{ fill: "#374151", fontSize: 11 }} />
-                  <Bar dataKey="receitas" fill="#2563eb" radius={[4, 4, 0, 0]} name="Receitas" />
-                  <Bar dataKey="despesas" fill="#dc2626" radius={[4, 4, 0, 0]} name="Despesas" />
+                  <Bar dataKey="receitas" fill="#2563eb" radius={[4, 4, 0, 0]} name="Receitas" isAnimationActive={false} />
+                  <Bar dataKey="despesas" fill="#dc2626" radius={[4, 4, 0, 0]} name="Despesas" isAnimationActive={false} />
                 </BarChart>
               ) : (
                 <div className="h-87.5">
@@ -512,11 +527,66 @@ export default function RelatoriosPage() {
               )}
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Detalhamento de Transações</CardTitle>
+              <CardDescription>Fluxo de entradas e saídas registradas no período selecionado</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">Carregando transações...</div>
+              ) : transactions.length === 0 ? (
+                <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma transação encontrada no período.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left border-collapse">
+                    <thead>
+                      <tr className="border-b text-muted-foreground font-medium">
+                        <th className="py-2 px-3">Data</th>
+                        <th className="py-2 px-3">Tipo</th>
+                        <th className="py-2 px-3">Descrição / Serviço</th>
+                        <th className="py-2 px-3">Paciente / Categoria</th>
+                        <th className="py-2 px-3 text-right">Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {transactions.map((t) => (
+                        <tr key={`${t.tipo}-${t.id}`} className="border-b hover:bg-muted/50 transition-colors">
+                          <td className="py-2.5 px-3 font-medium whitespace-nowrap">
+                            {new Date(t.data + "T12:00:00").toLocaleDateString("pt-BR")}
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                              t.tipo === 'receita'
+                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400'
+                                : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                            }`}>
+                              {t.tipo === 'receita' ? 'Receita' : 'Despesa'}
+                            </span>
+                          </td>
+                          <td className="py-2.5 px-3">{t.descricao}</td>
+                          <td className="py-2.5 px-3 text-muted-foreground">
+                            {t.tipo === 'receita' ? t.paciente || '—' : t.categoriaInfo || '—'}
+                          </td>
+                          <td className={`py-2.5 px-3 text-right font-semibold ${
+                            t.tipo === 'receita' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+                          }`}>
+                            {t.tipo === 'receita' ? '+' : '-'} {formatCurrency(t.valor)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ── Patients Report ── */}
         <TabsContent value="pacientes" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3 print:grid print:grid-cols-3 print:gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -580,7 +650,7 @@ export default function RelatoriosPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="month" tick={{ fill: "#374151", fontSize: 11 }} />
                   <YAxis tick={{ fill: "#374151", fontSize: 11 }} />
-                  <Line type="monotone" dataKey="novos" stroke="#2563eb" strokeWidth={2} name="Novos" />
+                  <Line type="monotone" dataKey="novos" stroke="#2563eb" strokeWidth={2} name="Novos" isAnimationActive={false} />
                 </LineChart>
               ) : (
                 <div className="h-87.5">
@@ -601,7 +671,7 @@ export default function RelatoriosPage() {
 
         {/* ── Appointments Report ── */}
         <TabsContent value="agenda" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-4 print:grid print:grid-cols-4 print:gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -682,9 +752,9 @@ export default function RelatoriosPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
                   <XAxis dataKey="month" tick={{ fill: "#374151", fontSize: 11 }} />
                   <YAxis tick={{ fill: "#374151", fontSize: 11 }} />
-                  <Bar dataKey="realizadas" fill="#2563eb" radius={[4, 4, 0, 0]} name="Realizadas" />
-                  <Bar dataKey="canceladas" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Canceladas" />
-                  <Bar dataKey="faltas" fill="#dc2626" radius={[4, 4, 0, 0]} name="Faltas" />
+                  <Bar dataKey="realizadas" fill="#2563eb" radius={[4, 4, 0, 0]} name="Realizadas" isAnimationActive={false} />
+                  <Bar dataKey="canceladas" fill="#f59e0b" radius={[4, 4, 0, 0]} name="Canceladas" isAnimationActive={false} />
+                  <Bar dataKey="faltas" fill="#dc2626" radius={[4, 4, 0, 0]} name="Faltas" isAnimationActive={false} />
                 </BarChart>
               ) : (
                 <div className="h-87.5">
@@ -707,7 +777,7 @@ export default function RelatoriosPage() {
 
         {/* ── Stock Report ── */}
         <TabsContent value="estoque" className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-3 print:grid print:grid-cols-3 print:gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -765,14 +835,16 @@ export default function RelatoriosPage() {
                     data={estoqueCategorias}
                     cx="50%"
                     cy="50%"
-                    outerRadius={100}
+                    outerRadius={90}
                     dataKey="value"
                     label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    isAnimationActive={false}
                   >
                     {estoqueCategorias.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={["#2563eb","#16a34a","#7c3aed","#d97706","#dc2626","#0891b2"][index % 6]} />
                     ))}
                   </Pie>
+                  <Legend verticalAlign="bottom" height={36} />
                 </PieChart>
               ) : (
                 <div className="h-87.5">

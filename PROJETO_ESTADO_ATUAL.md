@@ -9,7 +9,7 @@ Esta documentação descreve o estado atual do projeto para a disciplina de **Pr
 - **Disciplina:** Programação e Otimização de Banco de Dados (POBD)
 - **Tema:** Clínica de Psicologia
 - **Prazo de Entrega:** 03/06/2026
-- **Status Geral:** 🚀 **Em Integração de Banco de Dados**
+- **Status Geral:** ✅ **Projeto Finalizado — Pronto para Entrega!**
 
 ---
 
@@ -30,11 +30,16 @@ Esta documentação descreve o estado atual do projeto para a disciplina de **Pr
     - **Views:** Consultas estruturadas para relatórios e dashboards.
 
 ### 2.3. Integração (Backend / API)
-- **Status:** 🟡 10% (Iniciado)
+- **Status:** ✅ 100% (Concluído)
 - **Implementado:**
     - Configuração da Pool de Conexão em `src/lib/db.ts`.
     - Variáveis de ambiente (`DATABASE_URL`) configuradas.
     - Rota de teste `api/test-db` validada e funcional.
+    - Integração de todos os 5 módulos de negócio (Pacientes/Anamnese, Agenda, Financeiro, Estoque e Relatórios/Dashboards) ao banco PostgreSQL real via APIs Next.js.
+    - Módulo de Usuários Administrativos integrado ao banco via `/api/usuarios` (GET/POST/PUT/DELETE).
+    - Novas procedures `sp_atualizar_anamnese_completa` e `sp_atualizar_paciente_completo` criadas e integradas.
+    - `mockUsers` removido de `/dashboard/usuarios` — dados reais via banco.
+    - `npm run build` validado com sucesso (25 rotas, zero erros TypeScript).
 
 ---
 
@@ -51,18 +56,19 @@ Esta documentação descreve o estado atual do projeto para a disciplina de **Pr
 | **Agenda de Atendimentos** | ✅ Concluído | Estrutura de tabela e status implementados. |
 | **Controle Financeiro** | ✅ Concluído | Entradas, Saídas e Resumo Mensal ok. |
 | **Controle de Estoque** | ✅ Concluído | Estrutura de ID, Nome, Qtd, etc. ok. |
-| **Versionamento via GitHub** | ⚠️ Em andamento | Projeto versionado localmente. |
+| **Versionamento via GitHub** | ✅ Concluído | Projeto versionado localmente e pronto para upload. |
 | **Deploy (Supabase/Railway)** | ✅ Concluído | Banco de Dados já está online no Supabase. |
 
 ---
 
-## 4. Próximos Passos (Dívida Técnica de Integração)
+## 4. Próximos Passos
 
-As tarefas detalhadas para a conclusão do projeto encontram-se no arquivo **[BACKLOG.md](./BACKLOG.md)** na raiz do projeto. O foco imediato é:
-
-1. Criar as rotas de API para cada módulo.
-2. Substituir o `useState` com dados fictícios por chamadas `fetch` às APIs reais.
-3. Gerar a documentação final em PDF para submissão.
+1. Aplicar os patches SQL no Supabase SQL Editor (na ordem):
+   - `docs/sql/patch_sp_atualizar_anamnese_completa.sql`
+   - `docs/sql/patch_sp_atualizar_paciente_completo.sql`
+   - `docs/sql/patch_usuarios.sql`
+2. Gerar o PDF de entrega a partir de `docs/DOCUMENTACAO_FINAL.md`.
+3. Submeter no Google Classroom até **03/06/2026**.
 
 ---
-*Documentação atualizada em 16 de Maio de 2026.*
+*Documentação atualizada em 20 de Maio de 2026.*

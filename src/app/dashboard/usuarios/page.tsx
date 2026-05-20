@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Plus,
   Search,
@@ -63,35 +63,14 @@ type User = {
   avatar?: string
 }
 
-const mockUsers: User[] = [
-  {
-    id: "1",
-    name: "Dr. Carlos Silva",
-    email: "carlos@psiclinic.com",
-    role: "dono",
-    createdAt: "2024-01-15",
-  },
-  {
-    id: "2",
-    name: "Dra. Maria Santos",
-    email: "maria@psiclinic.com",
-    role: "admin",
-    createdAt: "2024-02-20",
-  },
-  {
-    id: "3",
-    name: "Ana Oliveira",
-    email: "ana@psiclinic.com",
-    role: "admin",
-    createdAt: "2024-03-10",
-  },
-]
-
 export default function UsersPage() {
-  const [users, setUsers] = useState<User[]>(mockUsers)
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [submitting, setSubmitting] = useState(false)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -100,42 +79,87 @@ export default function UsersPage() {
     role: "admin" as "dono" | "admin",
   })
 
+  const fetchUsers = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const res = await fetch("/api/usuarios")
+      const json = await res.json()
+      if (json.success) {
+        setUsers(
+          json.data.map((u: { id: string; nome: string; email: string; perfil: string; criado_em: string }) => ({
+            id: u.id,
+            name: u.nome,
+            email: u.email,
+            role: u.perfil as "dono" | "admin",
+            createdAt: u.criado_em,
+          }))
+        )
+      } else {
+        setError(json.message || "Erro ao carregar usuários")
+      }
+    } catch {
+      setError("Erro de conexão ao carregar usuários")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
   const filteredUsers = users.filter(
     (user) =>
       user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (formData.password !== formData.confirmPassword) {
+    if (!editingUser && formData.password !== formData.confirmPassword) {
       toast.error("As senhas não coincidem!")
       return
     }
 
-    if (editingUser) {
-      setUsers(
-        users.map((u) =>
-          u.id === editingUser.id
-            ? { ...u, name: formData.name, email: formData.email, role: formData.role }
-            : u
-        )
-      )
-      toast.success("Usuário atualizado com sucesso!")
-    } else {
-      const newUser: User = {
-        id: String(Date.now()),
-        name: formData.name,
-        email: formData.email,
-        role: formData.role,
-        createdAt: new Date().toISOString().split("T")[0],
+    setSubmitting(true)
+    try {
+      if (editingUser) {
+        const res = await fetch("/api/usuarios", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: editingUser.id,
+            nome: formData.name,
+            email: formData.email,
+            perfil: formData.role,
+          }),
+        })
+        const json = await res.json()
+        if (!json.success) throw new Error(json.message)
+        toast.success("Usuário atualizado com sucesso!")
+      } else {
+        const res = await fetch("/api/usuarios", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nome: formData.name,
+            email: formData.email,
+            perfil: formData.role,
+          }),
+        })
+        const json = await res.json()
+        if (!json.success) throw new Error(json.message)
+        toast.success("Usuário criado com sucesso!")
       }
-      setUsers([...users, newUser])
-      toast.success("Usuário criado com sucesso!")
+      await fetchUsers()
+      resetForm()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar usuário")
+    } finally {
+      setSubmitting(false)
     }
-
-    resetForm()
   }
 
   const resetForm = () => {
@@ -162,14 +186,21 @@ export default function UsersPage() {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const user = users.find((u) => u.id === id)
     if (user?.role === "dono") {
       toast.error("Não é possível excluir o usuário proprietário!")
       return
     }
-    setUsers(users.filter((u) => u.id !== id))
-    toast.success("Usuário excluído com sucesso!")
+    try {
+      const res = await fetch(`/api/usuarios?id=${id}`, { method: "DELETE" })
+      const json = await res.json()
+      if (!json.success) throw new Error(json.message)
+      toast.success("Usuário excluído com sucesso!")
+      await fetchUsers()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao excluir usuário")
+    }
   }
 
   const getInitials = (name: string) => {
@@ -300,8 +331,12 @@ export default function UsersPage() {
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar
                 </Button>
-                <Button type="submit">
-                  {editingUser ? "Salvar Alterações" : "Criar Usuário"}
+                <Button type="submit" disabled={submitting}>
+                  {submitting
+                    ? "Salvando..."
+                    : editingUser
+                    ? "Salvar Alterações"
+                    : "Criar Usuário"}
                 </Button>
               </DialogFooter>
             </form>
@@ -341,7 +376,19 @@ export default function UsersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.length === 0 ? (
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                      Carregando usuários...
+                    </TableCell>
+                  </TableRow>
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-24 text-center text-destructive">
+                      {error}
+                    </TableCell>
+                  </TableRow>
+                ) : filteredUsers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">
                       Nenhum usuário encontrado.

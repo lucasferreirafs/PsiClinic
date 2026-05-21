@@ -98,7 +98,7 @@ export function ProfissionaisPage() {
         setError(json.message ?? "Erro ao carregar profissionais")
       }
     } catch {
-      setError("Erro de conexÃ£o ao carregar profissionais")
+      setError("Erro de conexão ao carregar profissionais")
     } finally {
       setLoading(false)
     }
@@ -142,7 +142,7 @@ export function ProfissionaisPage() {
         toast.error(json.message ?? "Erro ao salvar profissional")
       }
     } catch {
-      toast.error("Erro de conexÃ£o ao salvar profissional")
+      toast.error("Erro de conexão ao salvar profissional")
     } finally {
       setSubmitting(false)
     }
@@ -161,7 +161,7 @@ export function ProfissionaisPage() {
         toast.error(json.message ?? "Erro ao inativar profissional")
       }
     } catch {
-      toast.error("Erro de conexÃ£o ao inativar profissional")
+      toast.error("Erro de conexão ao inativar profissional")
     }
   }
 
@@ -195,7 +195,7 @@ export function ProfissionaisPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Profissionais</h1>
           <p className="text-muted-foreground">
-            Gerencie os psicÃ³logos e profissionais da clÃ­nica
+            Gerencie os psicólogos e profissionais da clínica
           </p>
         </div>
 
@@ -254,7 +254,7 @@ export function ProfissionaisPage() {
                       onChange={(e) =>
                         setFormData({ ...formData, especialidade: e.target.value })
                       }
-                      placeholder="Psicologia ClÃ­nica"
+                      placeholder="Psicologia Clínica"
                     />
                   </div>
                 </div>
@@ -267,7 +267,7 @@ export function ProfissionaisPage() {
                   {submitting && (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   )}
-                  {editingProfissional ? "Salvar AlteraÃ§Ãµes" : "Cadastrar"}
+                  {editingProfissional ? "Salvar Alterações" : "Cadastrar"}
                 </Button>
               </DialogFooter>
             </form>
@@ -320,7 +320,7 @@ export function ProfissionaisPage() {
                   <TableHead>Profissional</TableHead>
                   <TableHead className="hidden sm:table-cell">CRP / Registro</TableHead>
                   <TableHead className="hidden md:table-cell">Especialidade</TableHead>
-                  <TableHead className="w-[70px]">AÃ§Ãµes</TableHead>
+                  <TableHead className="w-[70px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -338,7 +338,7 @@ export function ProfissionaisPage() {
                     <TableCell colSpan={4} className="h-24 text-center">
                       {searchTerm
                         ? "Nenhum profissional encontrado para esta busca."
-                        : "Nenhum profissional cadastrado. Clique em \"Novo Profissional\" para comeÃ§ar."}
+                        : "Nenhum profissional cadastrado. Clique em \"Novo Profissional\" para começar."}
                     </TableCell>
                   </TableRow>
                 ) : (

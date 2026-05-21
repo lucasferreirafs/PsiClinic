@@ -104,10 +104,10 @@ function fmtMonth(ano: number, mes: number) {
 // â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 const REPORT_TYPE_LABELS: Record<string, string> = {
-  financeiro: "RelatÃ³rio Financeiro",
-  pacientes: "RelatÃ³rio de Pacientes",
-  agenda: "RelatÃ³rio de Agenda",
-  estoque: "RelatÃ³rio de Estoque",
+  financeiro: "Relatório Financeiro",
+  pacientes: "Relatório de Pacientes",
+  agenda: "Relatório de Agenda",
+  estoque: "Relatório de Estoque",
 }
 
 export function RelatoriosPage() {
@@ -182,7 +182,7 @@ export function RelatoriosPage() {
         setEstoqueCategorias(estData.data.categorias)
       }
     } catch {
-      toast.error("Erro ao carregar relatÃ³rios")
+      toast.error("Erro ao carregar relatórios")
     } finally {
       setLoading(false)
     }
@@ -333,7 +333,7 @@ export function RelatoriosPage() {
               </div>
               <div>
                 <div style={{ color: "#60a5fa", fontSize: 24, fontWeight: 800, letterSpacing: "-0.5px", lineHeight: 1 }}>PsiClinic</div>
-                <div style={{ color: "#93c5fd", fontSize: 11, marginTop: 3 }}>Sistema de GestÃ£o ClÃ­nica de Psicologia</div>
+                <div style={{ color: "#93c5fd", fontSize: 11, marginTop: 3 }}>Sistema de Gestão Clínica de Psicologia</div>
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
@@ -355,8 +355,8 @@ export function RelatoriosPage() {
           WebkitPrintColorAdjust: "exact",
           printColorAdjust: "exact",
         } as React.CSSProperties}>
-          <div><span style={{ fontWeight: 700, color: "#1e3a5f" }}>PerÃ­odo:</span> {printPeriod}</div>
-          <div><span style={{ fontWeight: 700, color: "#1e3a5f" }}>MÃ³dulo:</span> {REPORT_TYPE_LABELS[reportType]}</div>
+          <div><span style={{ fontWeight: 700, color: "#1e3a5f" }}>Período:</span> {printPeriod}</div>
+          <div><span style={{ fontWeight: 700, color: "#1e3a5f" }}>Módulo:</span> {REPORT_TYPE_LABELS[reportType]}</div>
           <div><span style={{ fontWeight: 700, color: "#1e3a5f" }}>Sistema:</span> PsiClinic v1.0</div>
         </div>
       </div>
@@ -364,8 +364,8 @@ export function RelatoriosPage() {
       {/* â”€â”€ Screen-only page title & export button â”€â”€ */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">RelatÃ³rios</h1>
-          <p className="text-muted-foreground">Visualize e exporte relatÃ³rios da clÃ­nica</p>
+          <h1 className="text-2xl font-bold tracking-tight">Relatórios</h1>
+          <p className="text-muted-foreground">Visualize e exporte relatórios da clínica</p>
         </div>
         <Button onClick={handleExport} disabled={isPrinting}>
           <Download className="mr-2 h-4 w-4" />
@@ -381,7 +381,7 @@ export function RelatoriosPage() {
         <CardContent>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <div className="space-y-2">
-              <Label htmlFor="start">Data InÃ­cio</Label>
+              <Label htmlFor="start">Data Início</Label>
               <Input
                 id="start"
                 type="date"
@@ -399,7 +399,7 @@ export function RelatoriosPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Tipo de RelatÃ³rio</Label>
+              <Label>Tipo de Relatório</Label>
               <Select value={reportType} onValueChange={setReportType}>
                 <SelectTrigger className="w-full sm:w-50">
                   <SelectValue />
@@ -454,7 +454,7 @@ export function RelatoriosPage() {
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                   <TrendingUp className="h-3 w-3 text-accent" />
-                  <span className="text-accent">Acumulado do perÃ­odo</span>
+                  <span className="text-accent">Acumulado do período</span>
                 </p>
               </CardContent>
             </Card>
@@ -470,14 +470,14 @@ export function RelatoriosPage() {
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                   <TrendingDown className="h-3 w-3 text-destructive" />
-                  <span className="text-destructive">Acumulado do perÃ­odo</span>
+                  <span className="text-destructive">Acumulado do período</span>
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Lucro LÃ­quido
+                  Lucro Líquido
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -496,12 +496,12 @@ export function RelatoriosPage() {
           <Card>
             <CardHeader>
               <CardTitle>Receitas vs Despesas</CardTitle>
-              <CardDescription>Comparativo mensal do perÃ­odo selecionado</CardDescription>
+              <CardDescription>Comparativo mensal do período selecionado</CardDescription>
             </CardHeader>
             <CardContent>
               {financialChartData.length === 0 ? (
                 <div className="flex h-40 items-center justify-center text-muted-foreground text-sm">
-                  {loading ? "Carregando..." : "Nenhum dado financeiro no perÃ­odo."}
+                  {loading ? "Carregando..." : "Nenhum dado financeiro no período."}
                 </div>
               ) : isPrinting ? (
                 <BarChart data={financialChartData} width={740} height={260}>
@@ -530,14 +530,14 @@ export function RelatoriosPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Detalhamento de TransaÃ§Ãµes</CardTitle>
-              <CardDescription>Fluxo de entradas e saÃ­das registradas no perÃ­odo selecionado</CardDescription>
+              <CardTitle>Detalhamento de Transações</CardTitle>
+              <CardDescription>Fluxo de entradas e saídas registradas no período selecionado</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">Carregando transaÃ§Ãµes...</div>
+                <div className="py-8 text-center text-sm text-muted-foreground">Carregando transações...</div>
               ) : transactions.length === 0 ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma transaÃ§Ã£o encontrada no perÃ­odo.</div>
+                <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma transação encontrada no período.</div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-left border-collapse">
@@ -545,7 +545,7 @@ export function RelatoriosPage() {
                       <tr className="border-b text-muted-foreground font-medium">
                         <th className="py-2 px-3">Data</th>
                         <th className="py-2 px-3">Tipo</th>
-                        <th className="py-2 px-3">DescriÃ§Ã£o / ServiÃ§o</th>
+                        <th className="py-2 px-3">Descrição / Serviço</th>
                         <th className="py-2 px-3">Paciente / Categoria</th>
                         <th className="py-2 px-3 text-right">Valor</th>
                       </tr>
@@ -612,14 +612,14 @@ export function RelatoriosPage() {
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                   <TrendingUp className="h-3 w-3 text-accent" />
-                  <span className="text-accent">Total no perÃ­odo</span>
+                  <span className="text-accent">Total no período</span>
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
-                  MÃ©dia de Idade
+                  Média de Idade
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -629,7 +629,7 @@ export function RelatoriosPage() {
                 <p className="text-xs text-muted-foreground mt-1">
                   {loading
                     ? ""
-                    : `MÃ­n. ${patientStats.menorIdade} â€” MÃ¡x. ${patientStats.maiorIdade}`}
+                    : `Mín. ${patientStats.menorIdade} â€” Máx. ${patientStats.maiorIdade}`}
                 </p>
               </CardContent>
             </Card>
@@ -637,7 +637,7 @@ export function RelatoriosPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Novos Pacientes por MÃªs</CardTitle>
+              <CardTitle>Novos Pacientes por Mês</CardTitle>
               <CardDescription>Cadastros realizados ao longo do tempo</CardDescription>
             </CardHeader>
             <CardContent>
@@ -739,13 +739,13 @@ export function RelatoriosPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Consultas por MÃªs</CardTitle>
+              <CardTitle>Consultas por Mês</CardTitle>
               <CardDescription>Realizadas, canceladas e faltas</CardDescription>
             </CardHeader>
             <CardContent>
               {agendaChartData.length === 0 ? (
                 <div className="flex h-40 items-center justify-center text-muted-foreground text-sm">
-                  {loading ? "Carregando..." : "Nenhum atendimento encontrado no perÃ­odo."}
+                  {loading ? "Carregando..." : "Nenhum atendimento encontrado no período."}
                 </div>
               ) : isPrinting ? (
                 <BarChart data={agendaChartData} width={740} height={260}>
@@ -801,7 +801,7 @@ export function RelatoriosPage() {
                 <div className="text-2xl font-bold text-destructive">
                   {loading ? "â€”" : estoqueResumo.totalCriticos}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">Itens abaixo do mÃ­nimo</p>
+                <p className="text-xs text-muted-foreground mt-1">Itens abaixo do mínimo</p>
               </CardContent>
             </Card>
             <Card>
@@ -821,7 +821,7 @@ export function RelatoriosPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle>DistribuiÃ§Ã£o por Categoria</CardTitle>
+              <CardTitle>Distribuição por Categoria</CardTitle>
               <CardDescription>Quantidade de itens por categoria</CardDescription>
             </CardHeader>
             <CardContent>

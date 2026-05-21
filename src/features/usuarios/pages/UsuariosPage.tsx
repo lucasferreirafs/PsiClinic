@@ -96,10 +96,10 @@ export function UsersPage() {
           }))
         )
       } else {
-        setError(json.message || "Erro ao carregar usuÃ¡rios")
+        setError(json.message || "Erro ao carregar usuários")
       }
     } catch {
-      setError("Erro de conexÃ£o ao carregar usuÃ¡rios")
+      setError("Erro de conexão ao carregar usuários")
     } finally {
       setLoading(false)
     }
@@ -119,12 +119,12 @@ export function UsersPage() {
     e.preventDefault()
 
     if (!editingUser && formData.password !== formData.confirmPassword) {
-      toast.error("As senhas nÃ£o coincidem!")
+      toast.error("As senhas não coincidem!")
       return
     }
 
     if (!editingUser && formData.password.length < 6) {
-      toast.error("A senha deve ter no mÃ­nimo 6 caracteres.")
+      toast.error("A senha deve ter no mínimo 6 caracteres.")
       return
     }
 
@@ -147,7 +147,7 @@ export function UsersPage() {
         })
         const json = await res.json()
         if (!json.success) throw new Error(json.message)
-        toast.success("UsuÃ¡rio atualizado com sucesso!")
+        toast.success("Usuário atualizado com sucesso!")
       } else {
         const res = await fetch("/api/usuarios", {
           method: "POST",
@@ -161,12 +161,12 @@ export function UsersPage() {
         })
         const json = await res.json()
         if (!json.success) throw new Error(json.message)
-        toast.success("UsuÃ¡rio criado com sucesso!")
+        toast.success("Usuário criado com sucesso!")
       }
       await fetchUsers()
       resetForm()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao salvar usuÃ¡rio")
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar usuário")
     } finally {
       setSubmitting(false)
     }
@@ -199,17 +199,17 @@ export function UsersPage() {
   const handleDelete = async (id: string) => {
     const user = users.find((u) => u.id === id)
     if (user?.role === "dono") {
-      toast.error("NÃ£o Ã© possÃ­vel excluir o usuÃ¡rio proprietÃ¡rio!")
+      toast.error("Não é possível excluir o usuário proprietário!")
       return
     }
     try {
       const res = await fetch(`/api/usuarios?id=${id}`, { method: "DELETE" })
       const json = await res.json()
       if (!json.success) throw new Error(json.message)
-      toast.success("UsuÃ¡rio excluÃ­do com sucesso!")
+      toast.success("Usuário excluído com sucesso!")
       await fetchUsers()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao excluir usuÃ¡rio")
+      toast.error(err instanceof Error ? err.message : "Erro ao excluir usuário")
     }
   }
 
@@ -226,27 +226,27 @@ export function UsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">UsuÃ¡rios Administradores</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Usuários Administradores</h1>
           <p className="text-muted-foreground">
-            Gerencie os usuÃ¡rios com acesso ao sistema
+            Gerencie os usuários com acesso ao sistema
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => resetForm()}>
               <Plus className="mr-2 h-4 w-4" />
-              Novo UsuÃ¡rio
+              Novo Usuário
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {editingUser ? "Editar UsuÃ¡rio" : "Novo UsuÃ¡rio Administrador"}
+                {editingUser ? "Editar Usuário" : "Novo Usuário Administrador"}
               </DialogTitle>
               <DialogDescription>
                 {editingUser
-                  ? "Atualize as informaÃ§Ãµes do usuÃ¡rio"
-                  : "Apenas o proprietÃ¡rio pode cadastrar novos administradores"}
+                  ? "Atualize as informações do usuário"
+                  : "Apenas o proprietário pode cadastrar novos administradores"}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit}>
@@ -310,7 +310,7 @@ export function UsersPage() {
                   </>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="role">NÃ­vel de Acesso</Label>
+                  <Label htmlFor="role">Nível de Acesso</Label>
                   <Select
                     value={formData.role}
                     onValueChange={(value: "dono" | "admin") =>
@@ -318,13 +318,13 @@ export function UsersPage() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione o nÃ­vel" />
+                      <SelectValue placeholder="Selecione o nível" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="dono">
                         <div className="flex items-center gap-2">
                           <Shield className="h-4 w-4" />
-                          ProprietÃ¡rio
+                          Proprietário
                         </div>
                       </SelectItem>
                       <SelectItem value="admin">
@@ -345,8 +345,8 @@ export function UsersPage() {
                   {submitting
                     ? "Salvando..."
                     : editingUser
-                    ? "Salvar AlteraÃ§Ãµes"
-                    : "Criar UsuÃ¡rio"}
+                    ? "Salvar Alterações"
+                    : "Criar Usuário"}
                 </Button>
               </DialogFooter>
             </form>
@@ -358,7 +358,7 @@ export function UsersPage() {
         <CardHeader>
           <CardTitle>Lista de Administradores</CardTitle>
           <CardDescription>
-            Total de {users.length} usuÃ¡rio(s) cadastrado(s)
+            Total de {users.length} usuário(s) cadastrado(s)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -378,18 +378,18 @@ export function UsersPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>UsuÃ¡rio</TableHead>
+                  <TableHead>Usuário</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>NÃ­vel de Acesso</TableHead>
+                  <TableHead>Nível de Acesso</TableHead>
                   <TableHead>Data de Cadastro</TableHead>
-                  <TableHead className="w-17.5">AÃ§Ãµes</TableHead>
+                  <TableHead className="w-17.5">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                      Carregando usuÃ¡rios...
+                      Carregando usuários...
                     </TableCell>
                   </TableRow>
                 ) : error ? (
@@ -401,7 +401,7 @@ export function UsersPage() {
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center">
-                      Nenhum usuÃ¡rio encontrado.
+                      Nenhum usuário encontrado.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -435,7 +435,7 @@ export function UsersPage() {
                           ) : (
                             <UserCog className="mr-1 h-3 w-3" />
                           )}
-                          {user.role === "dono" ? "ProprietÃ¡rio" : "Administrador"}
+                          {user.role === "dono" ? "Proprietário" : "Administrador"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">

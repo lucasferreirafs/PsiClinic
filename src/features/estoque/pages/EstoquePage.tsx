@@ -65,7 +65,7 @@ type StockItem = {
   minQuantity: number
   entryDate: string
   supplier: string
-  statusEstoque?: "CRÃTICO" | "NORMAL" | "INEXISTENTE"
+  statusEstoque?: "CRÍTICO" | "NORMAL" | "INEXISTENTE"
 }
 
 type CriticalItem = {
@@ -76,9 +76,9 @@ type CriticalItem = {
 }
 
 const categories = [
-  "DescartÃ¡veis",
+  "Descartáveis",
   "Bebidas",
-  "EscritÃ³rio",
+  "Escritório",
   "Higiene",
   "Limpeza",
   "Outros",
@@ -164,7 +164,7 @@ export function EstoquePage() {
   })
 
   const isLowStock = (item: StockItem) =>
-    item.statusEstoque === "CRÃTICO" || item.currentQuantity < item.minQuantity
+    item.statusEstoque === "CRÍTICO" || item.currentQuantity < item.minQuantity
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -270,7 +270,7 @@ export function EstoquePage() {
 
     const quantidade = Number(movementForm.quantidade)
     if (!quantidade || !Number.isInteger(quantidade) || quantidade <= 0) {
-      toast.error("Informe uma quantidade vÃ¡lida (nÃºmero inteiro positivo)")
+      toast.error("Informe uma quantidade válida (número inteiro positivo)")
       return
     }
 
@@ -289,21 +289,21 @@ export function EstoquePage() {
       const data = await res.json()
 
       if (!res.ok || !data.success) {
-        toast.error(data.message || "Erro ao registrar movimentaÃ§Ã£o")
+        toast.error(data.message || "Erro ao registrar movimentação")
         return
       }
 
       toast.success(
         movementForm.tipo === "entrada"
           ? "Entrada registrada com sucesso!"
-          : "SaÃ­da registrada com sucesso!"
+          : "Saída registrada com sucesso!"
       )
       setIsMovementDialogOpen(false)
       setMovingItem(null)
       setMovementForm({ tipo: "entrada", quantidade: "", observacao: "" })
       await loadData()
     } catch {
-      toast.error("Erro ao registrar movimentaÃ§Ã£o")
+      toast.error("Erro ao registrar movimentação")
     } finally {
       setSubmitting(false)
     }
@@ -315,7 +315,7 @@ export function EstoquePage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Estoque</h1>
           <p className="text-muted-foreground">
-            Controle de materiais e suprimentos da clÃ­nica
+            Controle de materiais e suprimentos da clínica
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -332,7 +332,7 @@ export function EstoquePage() {
               </DialogTitle>
               <DialogDescription>
                 {editingItem
-                  ? "Atualize as informaÃ§Ãµes do item"
+                  ? "Atualize as informações do item"
                   : "Adicione um novo item ao controle de estoque"}
               </DialogDescription>
             </DialogHeader>
@@ -405,7 +405,7 @@ export function EstoquePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="minQuantity">Quantidade MÃ­nima</Label>
+                    <Label htmlFor="minQuantity">Quantidade Mínima</Label>
                     <Input
                       id="minQuantity"
                       type="number"
@@ -437,7 +437,7 @@ export function EstoquePage() {
                   Cancelar
                 </Button>
                 <Button type="submit" disabled={submitting}>
-                  {editingItem ? "Salvar AlteraÃ§Ãµes" : "Adicionar"}
+                  {editingItem ? "Salvar Alterações" : "Adicionar"}
                 </Button>
               </DialogFooter>
             </form>
@@ -454,7 +454,7 @@ export function EstoquePage() {
               <CardTitle className="text-sm font-semibold text-destructive">
                 {criticalItems.length}{" "}
                 {criticalItems.length === 1 ? "item com estoque" : "itens com estoque"} abaixo do
-                mÃ­nimo
+                mínimo
               </CardTitle>
             </div>
           </CardHeader>
@@ -498,7 +498,7 @@ export function EstoquePage() {
             <div className="text-2xl font-bold text-destructive">
               {loading ? "â€”" : criticalItems.length}
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Itens abaixo do mÃ­nimo</p>
+            <p className="text-xs text-muted-foreground mt-1">Itens abaixo do mínimo</p>
           </CardContent>
         </Card>
 
@@ -556,7 +556,7 @@ export function EstoquePage() {
                   <TableHead>Produto</TableHead>
                   <TableHead className="hidden sm:table-cell">Categoria</TableHead>
                   <TableHead>Qtd. Atual</TableHead>
-                  <TableHead className="hidden md:table-cell">Qtd. MÃ­nima</TableHead>
+                  <TableHead className="hidden md:table-cell">Qtd. Mínima</TableHead>
                   <TableHead className="hidden lg:table-cell">Data Entrada</TableHead>
                   <TableHead className="hidden md:table-cell">Fornecedor</TableHead>
                   <TableHead className="w-12.5"></TableHead>
@@ -635,7 +635,7 @@ export function EstoquePage() {
                               }}
                             >
                               <ArrowDown className="mr-2 h-4 w-4 text-destructive" />
-                              SaÃ­da
+                              Saída
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleEdit(item)}>
@@ -665,7 +665,7 @@ export function EstoquePage() {
       <Dialog open={isMovementDialogOpen} onOpenChange={setIsMovementDialogOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Registrar MovimentaÃ§Ã£o</DialogTitle>
+            <DialogTitle>Registrar Movimentação</DialogTitle>
             <DialogDescription>
               {movingItem?.product}
               {movingItem && (
@@ -690,7 +690,7 @@ export function EstoquePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="entrada">Entrada</SelectItem>
-                    <SelectItem value="saida">SaÃ­da</SelectItem>
+                    <SelectItem value="saida">Saída</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -709,13 +709,13 @@ export function EstoquePage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>ObservaÃ§Ã£o</Label>
+                <Label>Observação</Label>
                 <Textarea
                   value={movementForm.observacao}
                   onChange={(e) =>
                     setMovementForm({ ...movementForm, observacao: e.target.value })
                   }
-                  placeholder="ObservaÃ§Ã£o (opcional)"
+                  placeholder="Observação (opcional)"
                   rows={2}
                 />
               </div>

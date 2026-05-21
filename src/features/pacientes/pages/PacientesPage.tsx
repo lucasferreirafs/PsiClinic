@@ -130,7 +130,7 @@ export function PatientsPage() {
         setError(json.message ?? "Erro ao carregar pacientes")
       }
     } catch {
-      setError("Erro de conexÃ£o ao carregar pacientes")
+      setError("Erro de conexão ao carregar pacientes")
     } finally {
       setLoading(false)
     }
@@ -171,7 +171,7 @@ export function PatientsPage() {
           toast.error(json.message ?? "Erro ao atualizar paciente")
         }
       } catch {
-        toast.error("Erro de conexÃ£o ao atualizar paciente")
+        toast.error("Erro de conexão ao atualizar paciente")
       } finally {
         setSubmitting(false)
       }
@@ -194,7 +194,7 @@ export function PatientsPage() {
         toast.error(json.message ?? "Erro ao cadastrar paciente")
       }
     } catch {
-      toast.error("Erro de conexÃ£o ao cadastrar paciente")
+      toast.error("Erro de conexão ao cadastrar paciente")
     } finally {
       setSubmitting(false)
     }
@@ -250,12 +250,12 @@ export function PatientsPage() {
       const json = await res.json()
       if (json.success) {
         setPatients(patients.filter((p) => p.id !== id))
-        toast.success("Paciente excluÃ­do com sucesso!")
+        toast.success("Paciente excluído com sucesso!")
       } else {
         toast.error(json.message ?? "Erro ao excluir paciente")
       }
     } catch {
-      toast.error("Erro de conexÃ£o ao excluir paciente")
+      toast.error("Erro de conexão ao excluir paciente")
     }
   }
 
@@ -289,7 +289,7 @@ export function PatientsPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Pacientes</h1>
           <p className="text-muted-foreground">
-            Gerencie os pacientes da clÃ­nica
+            Gerencie os pacientes da clínica
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -306,7 +306,7 @@ export function PatientsPage() {
               </DialogTitle>
               <DialogDescription>
                 {editingPatient
-                  ? "Atualize as informaÃ§Ãµes do paciente"
+                  ? "Atualize as informações do paciente"
                   : "Preencha os dados para cadastrar um novo paciente"}
               </DialogDescription>
             </DialogHeader>
@@ -385,26 +385,26 @@ export function PatientsPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="endereco">EndereÃ§o</Label>
+                    <Label htmlFor="endereco">Endereço</Label>
                     <Input
                       id="endereco"
                       value={formData.endereco}
                       onChange={(e) =>
                         setFormData({ ...formData, endereco: e.target.value })
                       }
-                      placeholder="EndereÃ§o completo"
+                      placeholder="Endereço completo"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="profissao">ProfissÃ£o</Label>
+                      <Label htmlFor="profissao">Profissão</Label>
                       <Input
                         id="profissao"
                         value={formData.profissao}
                         onChange={(e) =>
                           setFormData({ ...formData, profissao: e.target.value })
                         }
-                        placeholder="ProfissÃ£o atual"
+                        placeholder="Profissão atual"
                       />
                     </div>
                     <div className="space-y-2">
@@ -422,18 +422,18 @@ export function PatientsPage() {
                           <SelectItem value="solteiro">Solteiro(a)</SelectItem>
                           <SelectItem value="casado">Casado(a)</SelectItem>
                           <SelectItem value="divorciado">Divorciado(a)</SelectItem>
-                          <SelectItem value="viuvo">ViÃºvo(a)</SelectItem>
-                          <SelectItem value="uniao-estavel">UniÃ£o EstÃ¡vel</SelectItem>
+                          <SelectItem value="viuvo">Viúvo(a)</SelectItem>
+                          <SelectItem value="uniao-estavel">União Estável</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                 </div>
 
-                {/* Contato de EmergÃªncia â€” visÃ­vel tanto no cadastro quanto na ediÃ§Ã£o */}
+                {/* Contato de Emergência â€” visível tanto no cadastro quanto na edição */}
                 <div className="space-y-4">
                   <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-                    Contato de EmergÃªncia
+                    Contato de Emergência
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -466,14 +466,14 @@ export function PatientsPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="contatoEmergenciaRelacao">RelaÃ§Ã£o</Label>
+                    <Label htmlFor="contatoEmergenciaRelacao">Relação</Label>
                     <Input
                       id="contatoEmergenciaRelacao"
                       value={formData.contatoEmergenciaRelacao}
                       onChange={(e) =>
                         setFormData({ ...formData, contatoEmergenciaRelacao: e.target.value })
                       }
-                      placeholder="Ex: MÃ£e, CÃ´njuge, IrmÃ£o"
+                      placeholder="Ex: Mãe, Cônjuge, Irmão"
                       required={!editingPatient}
                     />
                   </div>
@@ -499,7 +499,7 @@ export function PatientsPage() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="tempoQueixa">HÃ¡ quanto tempo?</Label>
+                      <Label htmlFor="tempoQueixa">Há quanto tempo?</Label>
                       <Input
                         id="tempoQueixa"
                         value={formData.tempoQueixa}
@@ -519,7 +519,7 @@ export function PatientsPage() {
                 </Button>
                 <Button type="submit" disabled={submitting}>
                   {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {editingPatient ? "Salvar AlteraÃ§Ãµes" : "Cadastrar"}
+                  {editingPatient ? "Salvar Alterações" : "Cadastrar"}
                 </Button>
               </DialogFooter>
             </form>
@@ -570,7 +570,7 @@ export function PatientsPage() {
                   <TableHead className="hidden md:table-cell">Telefone</TableHead>
                   <TableHead className="hidden lg:table-cell">Email</TableHead>
                   <TableHead className="hidden md:table-cell">Idade</TableHead>
-                  <TableHead className="w-17.5">AÃ§Ãµes</TableHead>
+                  <TableHead className="w-17.5">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

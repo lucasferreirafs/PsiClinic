@@ -158,7 +158,7 @@ export function AgendaPage() {
         toast.error(json.message ?? "Erro ao carregar agenda")
       }
     } catch {
-      toast.error("Erro de conexÃ£o ao carregar agenda")
+      toast.error("Erro de conexão ao carregar agenda")
     } finally {
       setLoadingAppointments(false)
     }
@@ -187,12 +187,12 @@ export function AgendaPage() {
       .catch(() => toast.error("Erro ao carregar lista de profissionais"))
   }, [fetchAppointments])
 
-  // â”€â”€ ValidaÃ§Ã£o de data/hora â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // â”€â”€ Validação de data/hora â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const todayStr = format(new Date(), "yyyy-MM-dd")
   const isPastDate = !editingAppointment && formData.date < todayStr
   const isSelectedToday = formData.date === todayStr
 
-  // HorÃ¡rios disponÃ­veis: filtra slots passados + janela de 2h para hoje
+  // Horários disponíveis: filtra slots passados + janela de 2h para hoje
   const availableSlots = useMemo(() => {
     if (editingAppointment) return timeSlots
     if (formData.date !== format(new Date(), "yyyy-MM-dd")) return timeSlots
@@ -205,7 +205,7 @@ export function AgendaPage() {
     })
   }, [formData.date, editingAppointment])
 
-  // Quando a data muda, invalida o horÃ¡rio se ele nÃ£o estiver mais disponÃ­vel
+  // Quando a data muda, invalida o horário se ele não estiver mais disponível
   const handleDateChange = (newDate: string) => {
     let newTime = formData.time
     if (!editingAppointment && newDate === format(new Date(), "yyyy-MM-dd") && newTime) {
@@ -286,7 +286,7 @@ export function AgendaPage() {
     }
 
     if (!formData.pacienteId || !formData.profissionalId || !formData.time) {
-      toast.error("Preencha paciente, profissional e horÃ¡rio")
+      toast.error("Preencha paciente, profissional e horário")
       return
     }
 
@@ -313,7 +313,7 @@ export function AgendaPage() {
         toast.error(json.message ?? "Erro ao criar agendamento")
       }
     } catch {
-      toast.error("Erro de conexÃ£o ao criar agendamento")
+      toast.error("Erro de conexão ao criar agendamento")
     } finally {
       setSubmitting(false)
     }
@@ -341,7 +341,7 @@ export function AgendaPage() {
 
   const handleDelete = (id: string) => {
     setAppointments(appointments.filter((apt) => apt.id !== id))
-    toast.success("Agendamento excluÃ­do!")
+    toast.success("Agendamento excluído!")
   }
 
   const handleStatusChange = async (id: string, acao: string) => {
@@ -367,7 +367,7 @@ export function AgendaPage() {
         toast.error(json.message ?? "Erro ao atualizar status")
       }
     } catch {
-      toast.error("Erro de conexÃ£o ao atualizar status")
+      toast.error("Erro de conexão ao atualizar status")
     } finally {
       setStatusLoading(null)
     }
@@ -379,7 +379,7 @@ export function AgendaPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Agenda</h1>
           <p className="text-muted-foreground">
-            Gerencie os atendimentos da clÃ­nica
+            Gerencie os atendimentos da clínica
           </p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -415,7 +415,7 @@ export function AgendaPage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="time">HorÃ¡rio</Label>
+                    <Label htmlFor="time">Horário</Label>
                     <Select
                       value={formData.time}
                       onValueChange={(v) => setFormData({ ...formData, time: v })}
@@ -426,7 +426,7 @@ export function AgendaPage() {
                       <SelectContent>
                         {availableSlots.length === 0 ? (
                           <SelectItem value="_sem_horario" disabled>
-                            Sem horÃ¡rios disponÃ­veis hoje
+                            Sem horários disponíveis hoje
                           </SelectItem>
                         ) : (
                           availableSlots.map((slot) => (
@@ -541,28 +541,28 @@ export function AgendaPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="observacoes">ObservaÃ§Ãµes</Label>
+                  <Label htmlFor="observacoes">Observações</Label>
                   <Input
                     id="observacoes"
                     value={formData.observacoes}
                     onChange={(e) =>
                       setFormData({ ...formData, observacoes: e.target.value })
                     }
-                    placeholder="ObservaÃ§Ãµes opcionais"
+                    placeholder="Observações opcionais"
                   />
                 </div>
               </div>
               {isPastDate && (
                 <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive mb-2">
                   <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                  NÃ£o Ã© possÃ­vel agendar para uma data no passado.
+                  Não é possível agendar para uma data no passado.
                 </div>
               )}
 
               {isSelectedToday && availableSlots.length === 0 && !editingAppointment && (
                 <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200 mb-2">
                   <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                  NÃ£o hÃ¡ horÃ¡rios disponÃ­veis para hoje (mÃ­nimo 2 h de antecedÃªncia).
+                  Não há horários disponíveis para hoje (mínimo 2 h de antecedência).
                 </div>
               )}
 
@@ -596,7 +596,7 @@ export function AgendaPage() {
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle>CalendÃ¡rio</CardTitle>
+            <CardTitle>Calendário</CardTitle>
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -678,12 +678,12 @@ export function AgendaPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>HorÃ¡rio</TableHead>
+                  <TableHead>Horário</TableHead>
                   <TableHead>Paciente</TableHead>
                   <TableHead className="hidden md:table-cell">Profissional</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="w-25">AÃ§Ãµes</TableHead>
+                  <TableHead className="w-25">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -739,7 +739,7 @@ export function AgendaPage() {
                           {pendingIds.has(appointment.id) && (
                             <AlertTriangle
                               className="h-4 w-4 text-amber-500 shrink-0"
-                              aria-label="Pendente de confirmaÃ§Ã£o"
+                              aria-label="Pendente de confirmação"
                             />
                           )}
                           {getStatusBadge(appointment.status)}

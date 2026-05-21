@@ -120,17 +120,17 @@ const services = [
   "Consulta Individual",
   "Terapia de Casal",
   "Terapia Familiar",
-  "AvaliaÃ§Ã£o PsicolÃ³gica",
+  "Avaliação Psicológica",
   "Acompanhamento Online",
 ]
 
-const paymentMethods = ["PIX", "CartÃ£o", "Dinheiro", "Boleto"]
+const paymentMethods = ["PIX", "Cartão", "Dinheiro", "Boleto"]
 
 const expenseCategoriesList = [
   "Infraestrutura",
   "Materiais",
   "Suprimentos",
-  "ServiÃ§os",
+  "Serviços",
   "Tecnologia",
   "Outros",
 ]
@@ -274,11 +274,11 @@ export function FinanceiroPage() {
       return
     }
     if (!revenueForm.service) {
-      toast.error("Selecione um serviÃ§o")
+      toast.error("Selecione um serviço")
       return
     }
     if (!revenueForm.amount || Number(revenueForm.amount) < 0) {
-      toast.error("Informe um valor vÃ¡lido")
+      toast.error("Informe um valor válido")
       return
     }
 
@@ -335,11 +335,11 @@ export function FinanceiroPage() {
     if (submitting) return
 
     if (!expenseForm.description.trim()) {
-      toast.error("Informe a descriÃ§Ã£o da despesa")
+      toast.error("Informe a descrição da despesa")
       return
     }
     if (!expenseForm.amount || Number(expenseForm.amount) < 0) {
-      toast.error("Informe um valor vÃ¡lido")
+      toast.error("Informe um valor válido")
       return
     }
 
@@ -382,13 +382,13 @@ export function FinanceiroPage() {
       const data = await res.json()
       if (res.ok && data.success) {
         setRevenues(revenues.filter((r) => r.id !== id))
-        toast.success("Receita excluÃ­da com sucesso!")
+        toast.success("Receita excluída com sucesso!")
         await loadData()
       } else {
         toast.error(data.message || "Erro ao excluir receita")
       }
     } catch {
-      toast.error("Erro de conexÃ£o ao excluir receita")
+      toast.error("Erro de conexão ao excluir receita")
     }
   }
 
@@ -400,13 +400,13 @@ export function FinanceiroPage() {
       const data = await res.json()
       if (res.ok && data.success) {
         setExpenses(expenses.filter((e) => e.id !== id))
-        toast.success("Despesa excluÃ­da com sucesso!")
+        toast.success("Despesa excluída com sucesso!")
         await loadData()
       } else {
         toast.error(data.message || "Erro ao excluir despesa")
       }
     } catch {
-      toast.error("Erro de conexÃ£o ao excluir despesa")
+      toast.error("Erro de conexão ao excluir despesa")
     }
   }
 
@@ -433,7 +433,7 @@ export function FinanceiroPage() {
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Financeiro</h1>
         <p className="text-muted-foreground">
-          Controle de receitas e despesas da clÃ­nica
+          Controle de receitas e despesas da clínica
         </p>
       </div>
 
@@ -478,7 +478,7 @@ export function FinanceiroPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Lucro LÃ­quido
+              Lucro Líquido
             </CardTitle>
             <DollarSign className="h-4 w-4 text-primary" />
           </CardHeader>
@@ -499,8 +499,8 @@ export function FinanceiroPage() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>EvoluÃ§Ã£o Mensal</CardTitle>
-            <CardDescription>Receitas e despesas por mÃªs</CardDescription>
+            <CardTitle>Evolução Mensal</CardTitle>
+            <CardDescription>Receitas e despesas por mês</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-62.5">
@@ -552,7 +552,7 @@ export function FinanceiroPage() {
         <Card>
           <CardHeader>
             <CardTitle>Despesas por Categoria</CardTitle>
-            <CardDescription>DistribuiÃ§Ã£o das despesas registradas</CardDescription>
+            <CardDescription>Distribuição das despesas registradas</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-62.5">
@@ -672,7 +672,7 @@ export function FinanceiroPage() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>ServiÃ§o</Label>
+                          <Label>Serviço</Label>
                           <Select
                             value={revenueForm.service}
                             onValueChange={(value) =>
@@ -756,7 +756,7 @@ export function FinanceiroPage() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar por paciente ou serviÃ§o..."
+                    placeholder="Buscar por paciente ou serviço..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-10"
@@ -770,7 +770,7 @@ export function FinanceiroPage() {
                     <TableRow>
                       <TableHead>Data</TableHead>
                       <TableHead>Paciente</TableHead>
-                      <TableHead className="hidden md:table-cell">ServiÃ§o</TableHead>
+                      <TableHead className="hidden md:table-cell">Serviço</TableHead>
                       <TableHead className="hidden sm:table-cell">Pagamento</TableHead>
                       <TableHead>Valor</TableHead>
                       <TableHead>Status</TableHead>
@@ -852,7 +852,7 @@ export function FinanceiroPage() {
                     <DialogHeader>
                       <DialogTitle>Nova Despesa</DialogTitle>
                       <DialogDescription>
-                        Registre uma nova saÃ­da financeira
+                        Registre uma nova saída financeira
                       </DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleAddExpense}>
@@ -882,13 +882,13 @@ export function FinanceiroPage() {
                           </div>
                         </div>
                         <div className="space-y-2">
-                          <Label>DescriÃ§Ã£o</Label>
+                          <Label>Descrição</Label>
                           <Input
                             value={expenseForm.description}
                             onChange={(e) =>
                               setExpenseForm({ ...expenseForm, description: e.target.value })
                             }
-                            placeholder="DescriÃ§Ã£o da despesa"
+                            placeholder="Descrição da despesa"
                             required
                           />
                         </div>
@@ -938,7 +938,7 @@ export function FinanceiroPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Data</TableHead>
-                      <TableHead>DescriÃ§Ã£o</TableHead>
+                      <TableHead>Descrição</TableHead>
                       <TableHead className="hidden sm:table-cell">Categoria</TableHead>
                       <TableHead>Valor</TableHead>
                       <TableHead className="w-12.5"></TableHead>

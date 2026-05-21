@@ -1,7 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { useInView } from "framer-motion"
+import { motion, useInView } from "framer-motion"
 import { useRef } from "react"
 import { Heart, Users, Video, Award, CheckCircle2 } from "lucide-react"
 
@@ -43,7 +42,7 @@ export function AboutSection() {
     <section id="sobre" className="py-24 bg-card relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,_var(--primary)_0%,_transparent_50%)]" />
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_30%_20%,var(--primary)_0%,transparent_50%)]" />
       </div>
 
       <div className="container mx-auto px-4" ref={ref}>
@@ -81,7 +80,7 @@ export function AboutSection() {
                   transition={{ duration: 0.4, delay: 0.3 + index * 0.1 }}
                   className="flex items-center gap-2"
                 >
-                  <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+                  <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
                   <span className="text-sm text-foreground">{item}</span>
                 </motion.div>
               ))}

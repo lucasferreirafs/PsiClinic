@@ -48,7 +48,7 @@ export function Footer() {
               className="flex items-center gap-3 mb-6"
               whileHover={{ scale: 1.02 }}
             >
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center">
                 <Brain className="w-7 h-7 text-primary-foreground" />
               </div>
               <span className="text-2xl font-serif font-semibold">PsiClinic</span>

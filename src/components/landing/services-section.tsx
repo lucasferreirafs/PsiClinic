@@ -1,7 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { useInView } from "framer-motion"
+import { motion, useInView } from "framer-motion"
 import { useRef } from "react"
 import { 
   User, 
@@ -60,7 +59,7 @@ export function ServicesSection() {
   return (
     <section id="servicos" className="py-24 relative">
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-background" />
+      <div className="absolute inset-0 bg-linear-to-b from-background via-muted/30 to-background" />
 
       <div className="container mx-auto px-4 relative z-10" ref={ref}>
         {/* Header */}
@@ -94,7 +93,7 @@ export function ServicesSection() {
             >
               <div className="relative overflow-hidden rounded-2xl bg-card border border-border/50 p-8 h-full shadow-sm hover:shadow-xl hover:border-primary/20 transition-all duration-500">
                 {/* Glassmorphism overlay */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${service.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                <div className={`absolute inset-0 bg-linear-to-br ${service.color} opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                 
                 <div className="relative z-10">
                   <motion.div

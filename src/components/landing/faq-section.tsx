@@ -1,7 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { useInView } from "framer-motion"
+import { motion, useInView } from "framer-motion"
 import { useRef, useState } from "react"
 import { ChevronDown } from "lucide-react"
 
@@ -36,7 +35,7 @@ export function FAQSection() {
   return (
     <section id="faq" className="py-24 relative">
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-card to-background" />
+      <div className="absolute inset-0 bg-linear-to-b from-card to-background" />
 
       <div className="container mx-auto px-4 relative z-10" ref={ref}>
         {/* Header */}
@@ -84,7 +83,7 @@ export function FAQSection() {
                   <motion.div
                     animate={{ rotate: openIndex === index ? 180 : 0 }}
                     transition={{ duration: 0.3 }}
-                    className="flex-shrink-0"
+                    className="shrink-0"
                   >
                     <ChevronDown className="w-5 h-5 text-primary" />
                   </motion.div>

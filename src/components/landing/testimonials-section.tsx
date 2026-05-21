@@ -1,7 +1,6 @@
 "use client"
 
-import { motion, AnimatePresence } from "framer-motion"
-import { useInView } from "framer-motion"
+import { motion, AnimatePresence, useInView } from "framer-motion"
 import { useRef, useState, useEffect } from "react"
 import { Star, ChevronLeft, ChevronRight, Quote } from "lucide-react"
 
@@ -83,7 +82,7 @@ export function TestimonialsSection() {
   }
 
   return (
-    <section className="py-24 bg-gradient-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
+    <section className="py-24 bg-linear-to-br from-primary/5 via-background to-accent/5 relative overflow-hidden">
       {/* Background Elements */}
       <div className="absolute top-20 left-10 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
       <div className="absolute bottom-20 right-10 w-80 h-80 bg-accent/5 rounded-full blur-3xl" />
@@ -123,7 +122,7 @@ export function TestimonialsSection() {
             </div>
 
             {/* Card */}
-            <div className="bg-card rounded-3xl p-8 md:p-12 shadow-xl border border-border/50 overflow-hidden min-h-[320px] flex flex-col justify-center">
+            <div className="bg-card rounded-3xl p-8 md:p-12 shadow-xl border border-border/50 overflow-hidden min-h-80 flex flex-col justify-center">
               <AnimatePresence mode="wait" custom={direction}>
                 <motion.div
                   key={currentIndex}
@@ -148,7 +147,7 @@ export function TestimonialsSection() {
 
                   {/* Author */}
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-lg">
+                    <div className="w-14 h-14 rounded-full bg-linear-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-semibold text-lg">
                       {testimonials[currentIndex].avatar}
                     </div>
                     <div>

@@ -3,12 +3,13 @@
 import { motion } from "framer-motion"
 import { ArrowRight, MessageCircle, Sparkles, Heart, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link";
 
 export function HeroSection() {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-secondary/10" />
+      <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-background to-secondary/10" />
       
       {/* Animated Background Shapes */}
       <motion.div
@@ -28,7 +29,7 @@ export function HeroSection() {
         transition={{ duration: 10, repeat: Infinity }}
       />
       <motion.div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-3xl"
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-secondary/5 rounded-full blur-3xl"
         animate={{
           rotate: [0, 360],
         }}
@@ -109,10 +110,7 @@ export function HeroSection() {
               className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-6 text-lg rounded-2xl shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all"
               asChild
             >
-              <a href="#contato">
-                Agendar Consulta
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </a>
+              <Link href="/dashboard">Agendar Consulta</Link>
             </Button>
             <Button
               size="lg"
@@ -120,7 +118,7 @@ export function HeroSection() {
               className="px-8 py-6 text-lg rounded-2xl border-2 hover:bg-secondary/50"
               asChild
             >
-              <a href="https://wa.me/5511999999999" target="_blank" rel="noopener noreferrer">
+              <a href="#contato">
                 <MessageCircle className="mr-2 w-5 h-5" />
                 Falar no WhatsApp
               </a>

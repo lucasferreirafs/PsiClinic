@@ -12,7 +12,7 @@ import { Footer } from "@/components/landing/footer"
 import { WhatsAppButton } from "@/components/landing/whatsapp-button"
 import { ScrollProgress } from "@/components/landing/scroll-progress"
 
-export default function Home() {
+export function Home() {
   return (
     <main className="min-h-screen">
       <ScrollProgress />

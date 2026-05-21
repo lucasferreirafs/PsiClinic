@@ -1,7 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { useInView } from "framer-motion"
+import { motion, useInView } from "framer-motion"
 import { useRef } from "react"
 
 const team = [
@@ -85,7 +84,7 @@ export function TeamSection() {
                 {/* Avatar */}
                 <motion.div
                   whileHover={{ scale: 1.05 }}
-                  className={`w-24 h-24 mx-auto rounded-full bg-gradient-to-br ${member.color} flex items-center justify-center text-2xl font-bold text-white mb-4 shadow-lg`}
+                  className={`w-24 h-24 mx-auto rounded-full bg-linear-to-br ${member.color} flex items-center justify-center text-2xl font-bold text-white mb-4 shadow-lg`}
                 >
                   {member.image}
                 </motion.div>
@@ -105,7 +104,7 @@ export function TeamSection() {
                 </p>
 
                 {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" />
+                <div className="absolute inset-0 bg-linear-to-t from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl pointer-events-none" />
               </div>
             </motion.div>
           ))}

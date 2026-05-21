@@ -1,7 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { useInView } from "framer-motion"
+import { motion, useInView } from "framer-motion"
 import { useRef, useState } from "react"
 import { 
   Phone, 
@@ -57,7 +56,7 @@ export function ContactSection() {
   return (
     <section id="contato" className="py-24 relative overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-background" />
+      <div className="absolute inset-0 bg-linear-to-b from-background via-muted/30 to-background" />
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-0 w-80 h-80 bg-accent/5 rounded-full blur-3xl" />
 
@@ -269,7 +268,7 @@ export function ContactSection() {
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.6 }}
-              className="rounded-2xl overflow-hidden border border-border/50 shadow-lg h-[300px] bg-muted"
+              className="rounded-2xl overflow-hidden border border-border/50 shadow-lg h-75 bg-muted"
             >
               <iframe
                 src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.1975870299897!2d-46.6543407!3d-23.5643245!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce59c8da0aa315%3A0xd59f9431f2c9776a!2sAv.%20Paulista%2C%20S%C3%A3o%20Paulo%20-%20SP!5e0!3m2!1spt-BR!2sbr!4v1234567890"

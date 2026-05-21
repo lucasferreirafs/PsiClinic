@@ -112,7 +112,7 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" })
-    router.push("/")
+    router.push("/login")
   }
 
   return (

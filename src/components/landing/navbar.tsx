@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Menu, X, Brain } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import Link from "next/link";
 
 const navLinks = [
   { href: "#sobre", label: "Sobre" },
@@ -44,7 +45,7 @@ export function Navbar() {
             className="flex items-center gap-2"
             whileHover={{ scale: 1.02 }}
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+            <div className="w-10 h-10 rounded-xl bg-linear-to-br from-primary to-accent flex items-center justify-center">
               <Brain className="w-6 h-6 text-primary-foreground" />
             </div>
             <span className="text-xl font-serif font-semibold text-foreground">
@@ -72,7 +73,7 @@ export function Navbar() {
               <a href="#contato">Falar no WhatsApp</a>
             </Button>
             <Button size="sm" className="bg-primary hover:bg-primary/90" asChild>
-              <a href="#contato">Agendar Consulta</a>
+              <Link href="/dashboard">Agendar Consulta</Link>
             </Button>
           </div>
 
@@ -123,7 +124,7 @@ export function Navbar() {
                     <a href="#contato">Falar no WhatsApp</a>
                   </Button>
                   <Button className="w-full bg-primary hover:bg-primary/90" asChild>
-                    <a href="#contato">Agendar Consulta</a>
+                    <Link href="/dashboard">Agendar Consulta</Link>
                   </Button>
                 </div>
               </div>

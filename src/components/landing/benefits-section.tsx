@@ -1,7 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { useInView } from "framer-motion"
+import { motion, useInView } from "framer-motion"
 import { useRef } from "react"
 import { 
   UserCheck, 
@@ -53,7 +52,7 @@ export function BenefitsSection() {
     <section className="py-24 bg-card relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-200 h-200 bg-primary/5 rounded-full blur-3xl" />
       </div>
 
       <div className="container mx-auto px-4 relative z-10" ref={ref}>
@@ -86,10 +85,10 @@ export function BenefitsSection() {
               whileHover={{ scale: 1.02 }}
               className="flex gap-4 p-6 rounded-2xl bg-background/50 backdrop-blur-sm border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
             >
-              <div className="flex-shrink-0">
+              <div className="shrink-0">
                 <motion.div
                   whileHover={{ rotate: 10 }}
-                  className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center"
+                  className="w-12 h-12 rounded-xl bg-linear-to-br from-primary/20 to-accent/20 flex items-center justify-center"
                 >
                   <benefit.icon className="w-6 h-6 text-primary" />
                 </motion.div>

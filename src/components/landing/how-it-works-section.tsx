@@ -1,7 +1,6 @@
 "use client"
 
-import { motion } from "framer-motion"
-import { useInView } from "framer-motion"
+import { motion, useInView } from "framer-motion"
 import { useRef } from "react"
 import { Calendar, Settings, Video, TrendingUp } from "lucide-react"
 
@@ -39,7 +38,7 @@ export function HowItWorksSection() {
   return (
     <section id="como-funciona" className="py-24 relative overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background to-muted/30" />
+      <div className="absolute inset-0 bg-linear-to-b from-background to-muted/30" />
 
       <div className="container mx-auto px-4 relative z-10" ref={ref}>
         {/* Header */}
@@ -63,7 +62,7 @@ export function HowItWorksSection() {
         {/* Timeline */}
         <div className="relative max-w-4xl mx-auto">
           {/* Connecting Line */}
-          <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary/50 via-accent/50 to-secondary/50 hidden md:block" />
+          <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-linear-to-b from-primary/50 via-accent/50 to-secondary/50 hidden md:block" />
 
           <div className="space-y-12">
             {steps.map((step, index) => (

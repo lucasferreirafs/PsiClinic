@@ -1,2 +1,2 @@
-import { LoginPage } from "@/features/auth/pages/LoginPage";
-export default LoginPage;
+import { Home } from "@/features/landingPage/pages/LandingPage";
+export default Home;

@@ -325,7 +325,7 @@ export function RelatoriosPage() {
                 WebkitPrintColorAdjust: "exact",
                 printColorAdjust: "exact",
               } as React.CSSProperties}>
-                {/* Brain icon â€” Lucide Brain SVG paths */}
+                {/* Brain icon — Lucide Brain SVG paths */}
                 <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z" />
                   <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z" />
@@ -450,7 +450,7 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-accent">
-                  {loading ? "â€”" : formatCurrency(financialTotals.totalReceitas)}
+                  {loading ? "—" : formatCurrency(financialTotals.totalReceitas)}
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                   <TrendingUp className="h-3 w-3 text-accent" />
@@ -466,7 +466,7 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-destructive">
-                  {loading ? "â€”" : formatCurrency(financialTotals.totalDespesas)}
+                  {loading ? "—" : formatCurrency(financialTotals.totalDespesas)}
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                   <TrendingDown className="h-3 w-3 text-destructive" />
@@ -486,7 +486,7 @@ export function RelatoriosPage() {
                     financialTotals.lucroLiquido >= 0 ? "text-primary" : "text-destructive"
                   }`}
                 >
-                  {loading ? "â€”" : formatCurrency(financialTotals.lucroLiquido)}
+                  {loading ? "—" : formatCurrency(financialTotals.lucroLiquido)}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Receitas - Despesas</p>
               </CardContent>
@@ -567,7 +567,7 @@ export function RelatoriosPage() {
                           </td>
                           <td className="py-2.5 px-3">{t.descricao}</td>
                           <td className="py-2.5 px-3 text-muted-foreground">
-                            {t.tipo === 'receita' ? t.paciente || 'â€”' : t.categoriaInfo || 'â€”'}
+                            {t.tipo === 'receita' ? t.paciente || '—' : t.categoriaInfo || '—'}
                           </td>
                           <td className={`py-2.5 px-3 text-right font-semibold ${
                             t.tipo === 'receita' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
@@ -595,7 +595,7 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {loading ? "â€”" : patientStats.total}
+                  {loading ? "—" : patientStats.total}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Total cadastrado</p>
               </CardContent>
@@ -608,7 +608,7 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-accent">
-                  {loading ? "â€”" : totalNovos}
+                  {loading ? "—" : totalNovos}
                 </div>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                   <TrendingUp className="h-3 w-3 text-accent" />
@@ -624,12 +624,12 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {loading ? "â€”" : `${patientStats.mediaIdade} anos`}
+                  {loading ? "—" : `${patientStats.mediaIdade} anos`}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {loading
                     ? ""
-                    : `Mín. ${patientStats.menorIdade} â€” Máx. ${patientStats.maiorIdade}`}
+                    : `Mín. ${patientStats.menorIdade} — Máx. ${patientStats.maiorIdade}`}
                 </p>
               </CardContent>
             </Card>
@@ -680,7 +680,7 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {loading ? "â€”" : agendaTotals.total}
+                  {loading ? "—" : agendaTotals.total}
                 </div>
               </CardContent>
             </Card>
@@ -692,7 +692,7 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-accent">
-                  {loading ? "â€”" : agendaTotals.realizadas}
+                  {loading ? "—" : agendaTotals.realizadas}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {loading || agendaTotals.total === 0
@@ -709,7 +709,7 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-warning-foreground">
-                  {loading ? "â€”" : agendaTotals.canceladas}
+                  {loading ? "—" : agendaTotals.canceladas}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {loading || agendaTotals.total === 0
@@ -726,7 +726,7 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-destructive">
-                  {loading ? "â€”" : agendaTotals.faltas}
+                  {loading ? "—" : agendaTotals.faltas}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
                   {loading || agendaTotals.total === 0
@@ -786,7 +786,7 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {loading ? "â€”" : estoqueResumo.totalItens}
+                  {loading ? "—" : estoqueResumo.totalItens}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Produtos cadastrados</p>
               </CardContent>
@@ -799,7 +799,7 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-destructive">
-                  {loading ? "â€”" : estoqueResumo.totalCriticos}
+                  {loading ? "—" : estoqueResumo.totalCriticos}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Itens abaixo do mínimo</p>
               </CardContent>
@@ -812,7 +812,7 @@ export function RelatoriosPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">
-                  {loading ? "â€”" : estoqueResumo.quantidadeTotal}
+                  {loading ? "—" : estoqueResumo.quantidadeTotal}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">Unidades em estoque</p>
               </CardContent>

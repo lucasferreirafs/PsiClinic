@@ -130,7 +130,7 @@ export function EstoquePage() {
           currentQuantity: Number(item.quantidade_atual),
           minQuantity: Number(item.quantidade_minima),
           entryDate: item.data_entrada ? String(item.data_entrada).substring(0, 10) : "",
-          supplier: item.fornecedor || "â€”",
+          supplier: item.fornecedor || "—",
           statusEstoque: item.status_estoque,
         })))
       }
@@ -244,7 +244,7 @@ export function EstoquePage() {
       currentQuantity: String(item.currentQuantity),
       minQuantity: String(item.minQuantity),
       entryDate: item.entryDate,
-      supplier: item.supplier === "â€”" ? "" : item.supplier,
+      supplier: item.supplier === "—" ? "" : item.supplier,
     })
     setIsDialogOpen(true)
   }
@@ -462,7 +462,7 @@ export function EstoquePage() {
             <div className="flex flex-wrap gap-2">
               {criticalItems.map((item, i) => (
                 <Badge key={i} variant="destructive" className="text-xs font-normal">
-                  {item.nome_produto} â€” {Number(item.quantidade_atual)}/{Number(item.quantidade_minima)}
+                  {item.nome_produto} — {Number(item.quantidade_atual)}/{Number(item.quantidade_minima)}
                 </Badge>
               ))}
             </div>
@@ -481,7 +481,7 @@ export function EstoquePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loading ? "â€”" : stockItems.length}
+              {loading ? "—" : stockItems.length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Produtos cadastrados</p>
           </CardContent>
@@ -496,7 +496,7 @@ export function EstoquePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {loading ? "â€”" : criticalItems.length}
+              {loading ? "—" : criticalItems.length}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Itens abaixo do mínimo</p>
           </CardContent>
@@ -511,7 +511,7 @@ export function EstoquePage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {loading ? "â€”" : new Set(stockItems.map((i) => i.category)).size}
+              {loading ? "—" : new Set(stockItems.map((i) => i.category)).size}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Categorias diferentes</p>
           </CardContent>
@@ -603,7 +603,7 @@ export function EstoquePage() {
                       <TableCell className="hidden lg:table-cell text-muted-foreground">
                         {item.entryDate
                           ? new Date(item.entryDate).toLocaleDateString("pt-BR")
-                          : "â€”"}
+                          : "—"}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground">
                         {item.supplier}
@@ -670,7 +670,7 @@ export function EstoquePage() {
               {movingItem?.product}
               {movingItem && (
                 <span className="ml-2 text-muted-foreground">
-                  â€” Qtd. atual: <strong>{movingItem.currentQuantity}</strong>
+                  — Qtd. atual: <strong>{movingItem.currentQuantity}</strong>
                 </span>
               )}
             </DialogDescription>

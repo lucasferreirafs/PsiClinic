@@ -187,9 +187,9 @@ export function FinanceiroPage() {
         setRevenues(revenuesData.data.map((r: any) => ({
           id: r.id,
           date: r.data_receita,
-          patient: r.paciente || "â€”",
+          patient: r.paciente || "—",
           service: r.servico,
-          paymentMethod: r.forma_pagamento || "â€”",
+          paymentMethod: r.forma_pagamento || "—",
           amount: Number(r.valor),
           status: r.status as Revenue["status"],
         })))
@@ -448,7 +448,7 @@ export function FinanceiroPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-accent">
-              {loading ? "â€”" : formatCurrency(summaryCards.totalReceitas)}
+              {loading ? "—" : formatCurrency(summaryCards.totalReceitas)}
             </div>
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
               <ArrowUpRight className="h-3 w-3 text-accent" />
@@ -466,7 +466,7 @@ export function FinanceiroPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-destructive">
-              {loading ? "â€”" : formatCurrency(summaryCards.totalDespesas)}
+              {loading ? "—" : formatCurrency(summaryCards.totalDespesas)}
             </div>
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
               <ArrowDownRight className="h-3 w-3 text-destructive" />
@@ -488,7 +488,7 @@ export function FinanceiroPage() {
                 summaryCards.lucroLiquido >= 0 ? "text-accent" : "text-destructive"
               }`}
             >
-              {loading ? "â€”" : formatCurrency(summaryCards.lucroLiquido)}
+              {loading ? "—" : formatCurrency(summaryCards.lucroLiquido)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Receitas - Despesas</p>
           </CardContent>

@@ -367,11 +367,11 @@ export function ProfissionaisPage() {
                             {prof.registro_profissional}
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground text-sm">â€”</span>
+                          <span className="text-muted-foreground text-sm">—</span>
                         )}
                       </TableCell>
                       <TableCell className="hidden md:table-cell text-muted-foreground">
-                        {prof.especialidade ?? "â€”"}
+                        {prof.especialidade ?? "—"}
                       </TableCell>
                       <TableCell>
                         <DropdownMenu>

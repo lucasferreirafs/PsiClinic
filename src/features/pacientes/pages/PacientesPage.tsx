@@ -430,7 +430,7 @@ export function PatientsPage() {
                   </div>
                 </div>
 
-                {/* Contato de Emergência â€” visível tanto no cadastro quanto na edição */}
+                {/* Contato de Emergência — visível tanto no cadastro quanto na edição */}
                 <div className="space-y-4">
                   <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
                     Contato de Emergência

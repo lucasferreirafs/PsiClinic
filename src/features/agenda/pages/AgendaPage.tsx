@@ -666,7 +666,7 @@ export function AgendaPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Clock className="h-5 w-5" />
-            Atendimentos â€”{" "}
+            Atendimentos —{" "}
             {format(selectedDate, "d 'de' MMMM, yyyy", { locale: ptBR })}
           </CardTitle>
           <CardDescription>

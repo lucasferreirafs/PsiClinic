@@ -162,7 +162,7 @@ function PatientSelector({ onSelect }: { onSelect: (p: Patient) => void }) {
                   <div className="flex-1 min-w-0">
                     <p className="font-medium text-sm truncate">{p.nome_completo}</p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {p.cpf ? formatCPF(p.cpf) : "CPF não informado"} â€¢ {p.email || "E-mail não informado"}
+                      {p.cpf ? formatCPF(p.cpf) : "CPF não informado"} • {p.email || "E-mail não informado"}
                     </p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
@@ -191,7 +191,7 @@ function AnamneseFormContent({ patientId }: { patientId: string }) {
   const [saving, setSaving] = useState(false)
   const [activeTab, setActiveTab] = useState("dados-pessoais")
 
-  // Dados pessoais (somente leitura â€” vêm do cadastro do paciente)
+  // Dados pessoais (somente leitura — vêm do cadastro do paciente)
   const [personalData, setPersonalData] = useState({
     nome_completo: "",
     data_nascimento: "",
@@ -441,7 +441,7 @@ function AnamneseFormContent({ patientId }: { patientId: string }) {
                       Nome Completo
                     </Label>
                     <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50 border border-border/50">
-                      <span className="text-sm">{personalData.nome_completo || "â€”"}</span>
+                      <span className="text-sm">{personalData.nome_completo || "—"}</span>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -453,7 +453,7 @@ function AnamneseFormContent({ patientId }: { patientId: string }) {
                         <span className="text-sm">
                           {personalData.data_nascimento
                             ? new Date(personalData.data_nascimento + "T12:00:00").toLocaleDateString("pt-BR")
-                            : "â€”"}
+                            : "—"}
                         </span>
                       </div>
                     </div>
@@ -463,7 +463,7 @@ function AnamneseFormContent({ patientId }: { patientId: string }) {
                       </Label>
                       <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
                         <span className="text-sm font-medium text-primary">
-                          {personalData.age ? `${personalData.age} anos` : "â€”"}
+                          {personalData.age ? `${personalData.age} anos` : "—"}
                         </span>
                       </div>
                     </div>
@@ -474,13 +474,13 @@ function AnamneseFormContent({ patientId }: { patientId: string }) {
                   <div className="space-y-2">
                     <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">CPF</Label>
                     <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
-                      <span className="text-sm font-mono">{personalData.cpf || "â€”"}</span>
+                      <span className="text-sm font-mono">{personalData.cpf || "—"}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Telefone</Label>
                     <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
-                      <span className="text-sm">{personalData.telefone || "â€”"}</span>
+                      <span className="text-sm">{personalData.telefone || "—"}</span>
                     </div>
                   </div>
                 </div>
@@ -489,13 +489,13 @@ function AnamneseFormContent({ patientId }: { patientId: string }) {
                   <div className="space-y-2">
                     <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">E-mail</Label>
                     <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
-                      <span className="text-sm truncate">{personalData.email || "â€”"}</span>
+                      <span className="text-sm truncate">{personalData.email || "—"}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Profissão</Label>
                     <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
-                      <span className="text-sm">{personalData.profissao || "â€”"}</span>
+                      <span className="text-sm">{personalData.profissao || "—"}</span>
                     </div>
                   </div>
                 </div>
@@ -504,7 +504,7 @@ function AnamneseFormContent({ patientId }: { patientId: string }) {
                   <div className="space-y-2">
                     <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Endereço</Label>
                     <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
-                      <span className="text-sm">{personalData.endereco || "â€”"}</span>
+                      <span className="text-sm">{personalData.endereco || "—"}</span>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -515,7 +515,7 @@ function AnamneseFormContent({ patientId }: { patientId: string }) {
                           {estadoCivilLabel[personalData.estado_civil] ?? personalData.estado_civil}
                         </Badge>
                       ) : (
-                        <span className="text-sm text-muted-foreground">â€”</span>
+                        <span className="text-sm text-muted-foreground">—</span>
                       )}
                     </div>
                   </div>
@@ -541,7 +541,7 @@ function AnamneseFormContent({ patientId }: { patientId: string }) {
                     <div key={label} className="space-y-2">
                       <Label className="text-muted-foreground text-xs font-medium uppercase tracking-wide">{label}</Label>
                       <div className="flex items-center p-3 rounded-md bg-muted/50 border border-border/50">
-                        <span className="text-sm">{value || "â€”"}</span>
+                        <span className="text-sm">{value || "—"}</span>
                       </div>
                     </div>
                   ))}
@@ -549,14 +549,14 @@ function AnamneseFormContent({ patientId }: { patientId: string }) {
               </CardContent>
             </Card>
 
-            {/* Queixa principal â€” editável, fica na aba de dados pessoais para fluxo natural */}
+            {/* Queixa principal — editável, fica na aba de dados pessoais para fluxo natural */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <AlertCircle className="h-5 w-5" />
                   Queixa Principal
                 </CardTitle>
-                <CardDescription>Motivo da busca por atendimento â€” editável</CardDescription>
+                <CardDescription>Motivo da busca por atendimento — editável</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">

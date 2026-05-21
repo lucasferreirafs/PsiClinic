@@ -287,7 +287,7 @@ export function UsersPage() {
                         onChange={(e) =>
                           setFormData({ ...formData, password: e.target.value })
                         }
-                        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                        placeholder="••••••••"
                         required={!editingUser}
                       />
                     </div>
@@ -303,7 +303,7 @@ export function UsersPage() {
                             confirmPassword: e.target.value,
                           })
                         }
-                        placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
+                        placeholder="••••••••"
                         required={!editingUser}
                       />
                     </div>

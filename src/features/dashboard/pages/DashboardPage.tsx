@@ -1,4 +1,4 @@
-﻿"use client"
+"use client"
 
 import { useState, useEffect, useCallback } from "react"
 import {
@@ -87,7 +87,7 @@ export function DashboardPage() {
     } catch (err) {
       console.error(err)
       setError("Erro de rede ao buscar dados do dashboard")
-      toast.error("Erro de conexÃ£o ao carregar o dashboard")
+      toast.error("Erro de conexão ao carregar o dashboard")
     } finally {
       setLoading(false)
     }
@@ -153,7 +153,7 @@ export function DashboardPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">Carregando informaÃ§Ãµes...</p>
+          <p className="text-muted-foreground">Carregando informações...</p>
         </div>
 
         {/* Stats Cards Skeleton */}
@@ -218,7 +218,7 @@ export function DashboardPage() {
         <div>
           <h2 className="text-xl font-bold">Erro ao Carregar Dashboard</h2>
           <p className="text-muted-foreground text-sm max-w-md mt-1">
-            NÃ£o conseguimos nos conectar ao banco de dados para gerar o resumo.
+            Não conseguimos nos conectar ao banco de dados para gerar o resumo.
           </p>
         </div>
         <Button onClick={fetchDashboardData} className="gap-2">
@@ -234,7 +234,7 @@ export function DashboardPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">
-            VisÃ£o geral da clÃ­nica para hoje,{" "}
+            Visão geral da clínica para hoje,{" "}
             {new Date().toLocaleDateString("pt-BR", {
               weekday: "long",
               day: "numeric",
@@ -285,7 +285,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Receitas do MÃªs
+              Receitas do Mês
             </CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -307,7 +307,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Despesas do MÃªs
+              Despesas do Mês
             </CardTitle>
             <TrendingDown className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
@@ -332,7 +332,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Receitas vs Despesas</CardTitle>
-            <CardDescription>Comparativo dos Ãºltimos meses</CardDescription>
+            <CardDescription>Comparativo dos últimos meses</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-75">
@@ -390,7 +390,7 @@ export function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>Consultas da Semana</CardTitle>
-            <CardDescription>NÃºmero de atendimentos por dia</CardDescription>
+            <CardDescription>Número de atendimentos por dia</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-75">
@@ -425,7 +425,7 @@ export function DashboardPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>PrÃ³ximos Atendimentos</CardTitle>
+                <CardTitle>Próximos Atendimentos</CardTitle>
                 <CardDescription>Agenda de hoje</CardDescription>
               </div>
               <Clock className="h-5 w-5 text-muted-foreground" />
@@ -474,7 +474,7 @@ export function DashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>Estoque Baixo</CardTitle>
-                <CardDescription>Itens que precisam de reposiÃ§Ã£o</CardDescription>
+                <CardDescription>Itens que precisam de reposição</CardDescription>
               </div>
               <Package className="h-5 w-5 text-muted-foreground" />
             </div>
@@ -497,7 +497,7 @@ export function DashboardPage() {
                     <div>
                       <p className="font-medium text-sm">{item.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        MÃ­nimo recomendado: {item.min} unidades
+                        Mínimo recomendado: {item.min} unidades
                       </p>
                     </div>
                     <Badge variant="destructive">

@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/dashboard")) {
     if (!token || !(await isValidToken(token))) {
-      return NextResponse.redirect(new URL("/", request.url))
+      return NextResponse.redirect(new URL("/login", request.url))
     }
     return NextResponse.next()
   }

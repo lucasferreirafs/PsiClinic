@@ -11,6 +11,8 @@ import {
   TrendingUp,
   TrendingDown,
   Brain,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -110,6 +112,8 @@ const REPORT_TYPE_LABELS: Record<string, string> = {
   estoque: "Relatório de Estoque",
 }
 
+const ITEMS_PER_PAGE = 10
+
 export function RelatoriosPage() {
   const today = new Date()
   const thisYear = today.getFullYear()
@@ -120,6 +124,7 @@ export function RelatoriosPage() {
   })
   const [appliedDates, setAppliedDates] = useState({ start: "", end: "" })
   const [reportType, setReportType] = useState("financeiro")
+  const [currentPage, setCurrentPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [isPrinting, setIsPrinting] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
@@ -260,6 +265,15 @@ export function RelatoriosPage() {
       })),
     [agendaMensal]
   )
+
+  // â”€â”€â”€ Page Navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  const totalPages = Math.ceil(transactions.length / ITEMS_PER_PAGE)
+  const paginatedTransactions = transactions.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
+
 
   // â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
@@ -536,7 +550,7 @@ export function RelatoriosPage() {
             <CardContent>
               {loading ? (
                 <div className="py-8 text-center text-sm text-muted-foreground">Carregando transações...</div>
-              ) : transactions.length === 0 ? (
+              ) : paginatedTransactions.length === 0 ? (
                 <div className="py-8 text-center text-sm text-muted-foreground">Nenhuma transação encontrada no período.</div>
               ) : (
                 <div className="overflow-x-auto">
@@ -551,7 +565,7 @@ export function RelatoriosPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {transactions.map((t) => (
+                      {paginatedTransactions.map((t) => (
                         <tr key={`${t.tipo}-${t.id}`} className="border-b hover:bg-muted/50 transition-colors">
                           <td className="py-2.5 px-3 font-medium whitespace-nowrap">
                             {new Date(t.data + "T12:00:00").toLocaleDateString("pt-BR")}
@@ -578,6 +592,36 @@ export function RelatoriosPage() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              )}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1} a{" "}
+                    {Math.min(currentPage * ITEMS_PER_PAGE, transactions.length)} de{" "}
+                    {transactions.length} resultados
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm">
+                      {currentPage} de {totalPages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage === totalPages}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>

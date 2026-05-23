@@ -25,10 +25,11 @@ export function LoginPage() {
 
     if (json.success) {
       toast.success("Login realizado com sucesso!")
+      router.refresh()
       router.push("/dashboard")
     } else {
       toast.error(json.message || "E-mail ou senha inválidos.")
-    }
+    } 
 
     setIsLoading(false)
   }

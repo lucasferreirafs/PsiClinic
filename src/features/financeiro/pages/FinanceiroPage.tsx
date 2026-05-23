@@ -631,7 +631,7 @@ export function FinanceiroPage() {
                 </div>
                 <Dialog open={isRevenueDialogOpen} onOpenChange={setIsRevenueDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="cursor-pointer">
+                    <Button>
                       <Plus className="mr-2 h-4 w-4" />
                       Nova Receita
                     </Button>
@@ -901,7 +901,7 @@ export function FinanceiroPage() {
                 </div>
                 <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="cursor-pointer">
+                    <Button>
                       <Plus className="mr-2 h-4 w-4" />
                       Nova Despesa
                     </Button>

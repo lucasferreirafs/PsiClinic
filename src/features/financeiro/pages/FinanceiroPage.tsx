@@ -13,6 +13,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -105,6 +107,8 @@ type SummaryCards = {
   lucroLiquido: number
 }
 
+const ITEMS_PER_PAGE = 10
+
 const CATEGORY_COLORS: Record<string, string> = {
   Infraestrutura: "oklch(0.55 0.15 220)",
   Materiais: "oklch(0.75 0.12 160)",
@@ -147,6 +151,8 @@ export function FinanceiroPage() {
   })
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
+  const [currentPageRevenues, setCurrentPageRevenues] = useState(1)
+  const [currentPageExpenses, setCurrentPageExpenses] = useState(1)
   const [isRevenueDialogOpen, setIsRevenueDialogOpen] = useState(false)
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = useState(false)
   const [revenueForm, setRevenueForm] = useState({
@@ -242,10 +248,22 @@ export function FinanceiroPage() {
       r.service.toLowerCase().includes(searchTerm.toLowerCase())
   )
 
+  const totalPagesRevenues = Math.ceil(filteredRevenues.length / ITEMS_PER_PAGE)
+  const paginatedRevenues = filteredRevenues.slice(
+    (currentPageRevenues - 1) * ITEMS_PER_PAGE,
+    currentPageRevenues * ITEMS_PER_PAGE
+  )
+
   const filteredExpenses = expenses.filter(
     (e) =>
       e.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       e.category.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const totalPagesExpenses = Math.ceil(filteredExpenses.length / ITEMS_PER_PAGE)
+  const paginatedExpenses = filteredExpenses.slice(
+    (currentPageExpenses - 1) * ITEMS_PER_PAGE,
+    currentPageExpenses * ITEMS_PER_PAGE
   )
 
   const expenseCategories = useMemo(() => {
@@ -751,6 +769,7 @@ export function FinanceiroPage() {
                 </Dialog>
               </div>
             </CardHeader>
+            {/* Tabela de Receitas */}
             <CardContent>
               <div className="mb-4">
                 <div className="relative">
@@ -778,14 +797,23 @@ export function FinanceiroPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredRevenues.length === 0 ? (
+                    {loading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="h-24 text-center">
-                          {loading ? "Carregando..." : "Nenhuma receita encontrada."}
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Carregando receitar...
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : paginatedRevenues.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          Nenhuma receita encontrada.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredRevenues.map((revenue) => (
+                      paginatedRevenues.map((revenue) => (
                         <TableRow key={revenue.id}>
                           <TableCell className="text-muted-foreground">
                             {new Date(revenue.date).toLocaleDateString("pt-BR")}
@@ -829,7 +857,37 @@ export function FinanceiroPage() {
                   </TableBody>
                 </Table>
               </div>
-            </CardContent>
+              {totalPagesRevenues > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando {(currentPageRevenues - 1) * ITEMS_PER_PAGE + 1} a{" "}
+                    {Math.min(currentPageRevenues * ITEMS_PER_PAGE, filteredRevenues.length)} de{" "}
+                    {filteredRevenues.length} resultados
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPageRevenues((p) => Math.max(1, p - 1))}
+                      disabled={currentPageRevenues === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm">
+                      {currentPageRevenues} de {totalPagesRevenues}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPageRevenues((p) => Math.min(totalPagesRevenues, p + 1))}
+                      disabled={currentPageRevenues === totalPagesRevenues}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </CardContent> 
           </Card>
         </TabsContent>
 
@@ -932,6 +990,7 @@ export function FinanceiroPage() {
                 </Dialog>
               </div>
             </CardHeader>
+            {/* Tabela de Despesas */}
             <CardContent>
               <div className="rounded-md border">
                 <Table>
@@ -945,14 +1004,23 @@ export function FinanceiroPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredExpenses.length === 0 ? (
+                    {loading ? (
                       <TableRow>
                         <TableCell colSpan={5} className="h-24 text-center">
-                          {loading ? "Carregando..." : "Nenhuma despesa encontrada."}
+                          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Carregando despesas...
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ) : paginatedExpenses.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="h-24 text-center">
+                          Nenhuma despesa encontrado.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredExpenses.map((expense) => (
+                      paginatedExpenses.map((expense) => (
                         <TableRow key={expense.id}>
                           <TableCell className="text-muted-foreground">
                             {new Date(expense.date).toLocaleDateString("pt-BR")}
@@ -992,6 +1060,36 @@ export function FinanceiroPage() {
                   </TableBody>
                 </Table>
               </div>
+              {totalPagesExpenses > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Mostrando {(currentPageExpenses - 1) * ITEMS_PER_PAGE + 1} a{" "}
+                    {Math.min(currentPageExpenses * ITEMS_PER_PAGE, filteredExpenses.length)} de{" "}
+                    {filteredExpenses.length} resultados
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPageExpenses((p) => Math.max(1, p - 1))}
+                      disabled={currentPageExpenses === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm">
+                      {currentPageExpenses} de {totalPagesExpenses}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentPageExpenses((p) => Math.min(totalPagesExpenses, p + 1))}
+                      disabled={currentPageExpenses === totalPagesExpenses}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

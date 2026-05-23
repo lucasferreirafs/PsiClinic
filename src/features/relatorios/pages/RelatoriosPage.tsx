@@ -565,7 +565,7 @@ export function RelatoriosPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedTransactions.map((t) => (
+                      {(isPrinting ? transactions : paginatedTransactions).map((t) => (
                         <tr key={`${t.tipo}-${t.id}`} className="border-b hover:bg-muted/50 transition-colors">
                           <td className="py-2.5 px-3 font-medium whitespace-nowrap">
                             {new Date(t.data + "T12:00:00").toLocaleDateString("pt-BR")}
@@ -595,7 +595,7 @@ export function RelatoriosPage() {
                 </div>
               )}
               {totalPages > 1 && (
-                <div className="flex items-center justify-between mt-4">
+                <div className="flex items-center justify-between mt-4 print:hidden">
                   <p className="text-sm text-muted-foreground">
                     Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1} a{" "}
                     {Math.min(currentPage * ITEMS_PER_PAGE, transactions.length)} de{" "}

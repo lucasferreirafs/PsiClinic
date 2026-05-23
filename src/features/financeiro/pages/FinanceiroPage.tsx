@@ -799,7 +799,7 @@ export function FinanceiroPage() {
                   <TableBody>
                     {loading ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
+                        <TableCell colSpan={7} className="h-24 text-center border ">
                           <div className="flex items-center justify-center gap-2 text-muted-foreground">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Carregando receitar...
@@ -808,7 +808,7 @@ export function FinanceiroPage() {
                       </TableRow>
                     ) : paginatedRevenues.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center">
+                        <TableCell colSpan={7} className="h-24 text-center">
                           Nenhuma receita encontrada.
                         </TableCell>
                       </TableRow>

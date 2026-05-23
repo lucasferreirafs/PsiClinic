@@ -28,8 +28,8 @@ const contactInfo = [
   {
     icon: MapPin,
     label: "Endereço",
-    value: "Av. Paulista, 1000 - São Paulo, SP",
-    href: "https://maps.google.com",
+    value: "R. Joaquim Felipe, 250 - Boa Vista, Recife - PE",
+    href: "https://maps.app.goo.gl/9FaY6M99pvjYp6Co8",
   },
   {
     icon: Clock,
@@ -271,7 +271,7 @@ export function ContactSection() {
               className="rounded-2xl overflow-hidden border border-border/50 shadow-lg h-75 bg-muted"
             >
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3657.1975870299897!2d-46.6543407!3d-23.5643245!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94ce59c8da0aa315%3A0xd59f9431f2c9776a!2sAv.%20Paulista%2C%20S%C3%A3o%20Paulo%20-%20SP!5e0!3m2!1spt-BR!2sbr!4v1234567890"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1231.0917395204904!2d-34.8920644681329!3d-8.0527747470032!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7ab18e91908588b%3A0x71a16782c155a582!2sUnibra%20Campus%20I!5e1!3m2!1spt-BR!2sbr!4v1779521653456!5m2!1spt-BR!2sbr"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

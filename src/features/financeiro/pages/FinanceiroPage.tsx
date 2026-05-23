@@ -611,11 +611,11 @@ export function FinanceiroPage() {
       {/* Tabs */}
       <Tabs defaultValue="receitas" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="receitas" className="gap-2">
+          <TabsTrigger value="receitas" className="gap-2 cursor-pointer">
             <TrendingUp className="h-4 w-4" />
             Receitas
           </TabsTrigger>
-          <TabsTrigger value="despesas" className="gap-2">
+          <TabsTrigger value="despesas" className="gap-2 cursor-pointer">
             <TrendingDown className="h-4 w-4" />
             Despesas
           </TabsTrigger>
@@ -631,7 +631,7 @@ export function FinanceiroPage() {
                 </div>
                 <Dialog open={isRevenueDialogOpen} onOpenChange={setIsRevenueDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button className="cursor-pointer">
                       <Plus className="mr-2 h-4 w-4" />
                       Nova Receita
                     </Button>
@@ -901,7 +901,7 @@ export function FinanceiroPage() {
                 </div>
                 <Dialog open={isExpenseDialogOpen} onOpenChange={setIsExpenseDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button className="cursor-pointer">
                       <Plus className="mr-2 h-4 w-4" />
                       Nova Despesa
                     </Button>
@@ -992,6 +992,18 @@ export function FinanceiroPage() {
             </CardHeader>
             {/* Tabela de Despesas */}
             <CardContent>
+              <div className="mb-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por descrição ou categoria..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>

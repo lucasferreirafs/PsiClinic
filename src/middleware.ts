@@ -25,8 +25,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  if (pathname === "/") {
-    if (token && (await isValidToken(token))) {
+  if(pathname === "/login") {
+    if(token && (await isValidToken(token))){
       return NextResponse.redirect(new URL("/dashboard", request.url))
     }
   }
@@ -35,5 +35,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/"],
+  matcher: ["/dashboard/:path*", "/login"],
 }

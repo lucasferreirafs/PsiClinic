@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   Settings,
   Building,
@@ -31,6 +31,7 @@ import {
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
+import { useTheme } from "next-themes"
 
 export function ConfiguracoesPage() {
   const [clinicData, setClinicData] = useState({
@@ -50,7 +51,8 @@ export function ConfiguracoesPage() {
     financialReports: true,
   })
 
-  const [theme, setTheme] = useState("light")
+  const { theme, setTheme } = useTheme()
+  const [themeMode, setThemeMode] = useState("light")
   const [language, setLanguage] = useState("pt-BR")
 
   const handleSaveClinic = () => {
@@ -65,6 +67,10 @@ export function ConfiguracoesPage() {
     toast.success("Configurações de aparência salvas!")
   }
 
+  useEffect(() => {
+    setThemeMode(theme === "light" ? "light" : "dark")
+  }, [theme]);
+  
   return (
     <div className="space-y-6">
       <div>
@@ -277,7 +283,7 @@ export function ConfiguracoesPage() {
             </div>
             <div className="flex items-center gap-2">
               <Button
-                variant={theme === "light" ? "default" : "outline"}
+                variant={themeMode === "light" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTheme("light")}
                 className="gap-2"
@@ -286,7 +292,7 @@ export function ConfiguracoesPage() {
                 Claro
               </Button>
               <Button
-                variant={theme === "dark" ? "default" : "outline"}
+                variant={themeMode === "dark" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setTheme("dark")}
                 className="gap-2"

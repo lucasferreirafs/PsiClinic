@@ -118,6 +118,8 @@ const STATUS_MAP: Record<string, AppointmentStatus> = {
   falta: "faltou",
 }
 
+const ITEMS_PER_PAGE = 5
+
 function mapApiToAppointment(item: Record<string, string>): Appointment {
   return {
     id: item.id,
@@ -146,6 +148,7 @@ export function AgendaPage() {
   const [editingAppointment, setEditingAppointment] = useState<Appointment | null>(null)
   const [formData, setFormData] = useState<FormData>(EMPTY_FORM)
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
 
   const fetchAppointments = useCallback(async () => {
     setLoadingAppointments(true)
@@ -229,6 +232,13 @@ export function AgendaPage() {
       .filter((apt) => isSameDay(apt.date, selectedDate))
       .sort((a, b) => a.time.localeCompare(b.time))
   }, [appointments, selectedDate])
+
+
+  const totalPages = Math.ceil(filteredAppointments.length / ITEMS_PER_PAGE)
+  const paginatedAppointments = filteredAppointments.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
 
   const getAppointmentsForDay = (date: Date) =>
     appointments.filter((apt) => isSameDay(apt.date, date))
@@ -696,14 +706,14 @@ export function AgendaPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : filteredAppointments.length === 0 ? (
+                ) : paginatedAppointments.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={6} className="h-24 text-center">
                       Nenhum atendimento agendado para este dia.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredAppointments.map((appointment) => (
+                  paginatedAppointments.map((appointment) => (
                     <TableRow key={appointment.id}>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -817,6 +827,36 @@ export function AgendaPage() {
               </TableBody>
             </Table>
           </div>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-sm text-muted-foreground">
+                Mostrando {(currentPage - 1) * ITEMS_PER_PAGE + 1} a{" "}
+                {Math.min(currentPage * ITEMS_PER_PAGE, filteredAppointments.length)} de{" "}
+                {filteredAppointments.length} resultados
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm">
+                  {currentPage} de {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

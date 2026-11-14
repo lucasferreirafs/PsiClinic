@@ -25,8 +25,8 @@ Sistema web de gestão clínica desenvolvido como projeto final da disciplina **
 ### 1. Clone o repositório
 
 ```bash
-git clone git@github.com:lucasferreirafs/app-clinica-psicologica.git
-cd app-clinica-psicologica
+git clone git@github.com:lucasferreirafs/PsiClinic.git
+cd PsiClinic
 ```
 
 ### 2. Instale as dependências
@@ -95,7 +95,7 @@ Para aplicar os patches adicionais (após o schema base):
 ## Estrutura de Pastas
 
 ```
-app-clinica-psicologica/
+PsiClinic/
 ├── docs/                        # Documentação técnica completa
 │   ├── 01-visao-geral.md
 │   ├── 02-modelagem-banco.md

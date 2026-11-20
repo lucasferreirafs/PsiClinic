@@ -15,8 +15,48 @@ Sistema web de gestão clínica desenvolvido como projeto final da disciplina **
 | Controle Financeiro | Receitas, despesas, resumo mensal, lucro | Concluído |
 | Controle de Estoque | Itens, movimentações, alertas críticos | Concluído |
 | Relatórios e Dashboards | Gráficos integrados com views do banco | Concluído |
+| Profissionais | Cadastro, especialidade, registro de classe (CRP) | Concluído |
 | Usuários Administrativos | Listagem, cadastro e edição de usuários do sistema | Concluído |
 | Autenticação JWT | Login, logout, proteção de rotas, cookie httpOnly | Concluído |
+
+---
+
+## 📸 Telas do Sistema
+
+### 📊 Dashboard Principal
+Visão consolidada com indicadores-chave em tempo real (pacientes ativos, atendimentos diários, saldo mensal e alertas operacionais), alimentados diretamente por views e functions do PostgreSQL.
+
+![Dashboard Principal](docs/screenshots/02-dashboard.png)
+
+### 📅 Agenda de Atendimentos
+Controle de agendamentos de consultas (presencial e online) com prevenção automática de conflitos de horários via trigger no banco de dados.
+
+![Agenda de Atendimentos](docs/screenshots/03-agenda.png)
+
+### 👤 Gestão de Pacientes e Anamnese
+Cadastro operacional com cálculo de idade em tempo real (`fn_calcular_idade`), dados de contato de emergência e histórico clínico.
+
+![Gestão de Pacientes](docs/screenshots/04-pacientes.png)
+
+### 💰 Controle Financeiro
+Fluxo de caixa completo com receitas vinculadas a pacientes, despesas operacionais e cálculo automático de lucratividade líquida via stored procedures.
+
+![Controle Financeiro](docs/screenshots/05-financeiro.png)
+
+### 📦 Controle de Estoque
+Monitoramento de materiais e insumos da clínica com destaque visual automático para itens abaixo da quantidade mínima (`vw_lista_estoque_critico`).
+
+![Controle de Estoque](docs/screenshots/06-estoque.png)
+
+### 📈 Relatórios e Gráficos
+Módulo de inteligência analítica com gráficos comparativos e consolidação de produtividade, finanças e estoque.
+
+![Relatórios e Gráficos](docs/screenshots/08-relatorios.png)
+
+### 🔐 Autenticação e Acesso
+Interface de login segura protegida por JWT (cookies `httpOnly`), com senhas criptografadas em Bcrypt (cost 12) e controle de bloqueio.
+
+![Tela de Login](docs/screenshots/01-login.png)
 
 ---
 
@@ -97,6 +137,7 @@ Para aplicar os patches adicionais (após o schema base):
 ```
 PsiClinic/
 ├── docs/                        # Documentação técnica completa
+│   ├── screenshots/             # Capturas de tela dos módulos do sistema
 │   ├── 01-visao-geral.md
 │   ├── 02-modelagem-banco.md
 │   ├── 03-stored-procedures.md
